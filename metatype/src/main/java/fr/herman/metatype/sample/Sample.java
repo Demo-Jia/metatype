@@ -4,5 +4,16 @@ import fr.herman.metatype.annotation.Bean;
 
 @Bean
 public class Sample {
-    public String hello;
+    private String hello;
+
+    public String getHello()
+    {
+        return hello;
+    }
+
+    public void setHello(String hello)
+    {
+        this.hello = hello;
+
+    }
 }
