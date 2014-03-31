@@ -34,47 +34,70 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
         context.getLogger().info("Start to generate MetaModel");
         for (AbstractJavaClass model : models)
         {
-            String metaClassName = model.getName().toString() + "MetaType";
-            JavaClass metaClass = New.classs(Classes.PUBLIC, metaClassName);
-
-            for (JavaField property : model.getFields())
+            try
             {
-                String propertyName = property.getName().toString();
-                String propertyMetaClassName = propertyName + "MetaProperty";
-                JavaNestedClass propertyMetaClass = New.nestedClass(NestedClasses.PUBLIC_FINAL_STATIC, propertyMetaClassName);
-                JavaType metaPropertyType = type(MetaProperty.class, model.getType().getTypeClass(), property.getType().getTypeClass());
-                propertyMetaClass.getInterfaces().add(metaPropertyType);
-                metaClass.getNestedClasses().add(propertyMetaClass);
+                String metaClassName = model.getName().toString() + "MetaType";
+                JavaClass metaClass = New.classs(Classes.PUBLIC, metaClassName);
 
-                addMetaNameProperty(propertyMetaClass, propertyName);
-                addMetaTypeProperty(propertyMetaClass, property);
-                addGetter(propertyMetaClass, model, property);
-                addSetter(propertyMetaClass, model, property);
+                for (JavaField property : model.getFields())
+                {
+                    String propertyName = property.getName().toString();
+                    String propertyMetaClassName = propertyName + "MetaProperty";
+                    JavaNestedClass propertyMetaClass = New.nestedClass(NestedClasses.PUBLIC_FINAL_STATIC, propertyMetaClassName);
+                    boolean isPrimitive = property.getType().getKind().isPrimitive();
+                    JavaType type = isPrimitive ? Helper.fromPrimitive(property.getType()) : property.getType();
 
-                JavaField metaPropertyField = New.field(Fields.PUBLIC_STATIC_FINAL, New.type(propertyMetaClassName), propertyName);
-                metaPropertyField.getValue().setHardcoded("new %s()", propertyMetaClassName);
-                // add the fields to the bean
-                metaClass.getFields().add(metaPropertyField);
+                    addIsPrimitive(propertyMetaClass, isPrimitive);
+
+                    JavaType metaPropertyType = Helper.type(MetaProperty.class, model.getType().getTypeClass(), type.getTypeClass());
+                    propertyMetaClass.getInterfaces().add(metaPropertyType);
+                    metaClass.getNestedClasses().add(propertyMetaClass);
+
+                    addMetaNameProperty(propertyMetaClass, propertyName);
+                    addMetaTypeProperty(propertyMetaClass, property, type);
+                    addGetter(propertyMetaClass, model, property, type);
+                    addSetter(propertyMetaClass, model, property, type);
+
+                    JavaField metaPropertyField = New.field(Fields.PUBLIC_STATIC_FINAL, New.type(propertyMetaClassName), propertyName);
+                    metaPropertyField.getValue().setHardcoded("new %s()", propertyMetaClassName);
+
+                    metaClass.getFields().add(metaPropertyField);
+                }
+
+                generate(metaClass);
             }
-
-            // generate the JavaBean class (e.g. Person)
-            generate(metaClass);
+            catch (Throwable t)
+            {
+                context.getLogger().error(t.getMessage(), t);
+                t.printStackTrace();
+            }
         }
 
     }
 
-    private void addGetter(JavaNestedClass propertyMetaClass, AbstractJavaClass model, JavaField property)
+    private void addIsPrimitive(JavaNestedClass propertyMetaClass, boolean isPrimitive)
     {
-        JavaMethod method = findMethod(model, "get" + property.getName().getCapitalized());
+        JavaField isPrimitiveField = New.field(Fields.PUBLIC_STATIC_FINAL, boolean.class, "IS_PRIMITIVE", New.literal(isPrimitive));
+        propertyMetaClass.getFields().add(isPrimitiveField);
+
+        JavaMethod isPrimitiveMethod = New.method(Methods.PUBLIC, boolean.class, "isPrimitive");
+        isPrimitiveMethod.getBody().setHardcoded("return IS_PRIMITIVE;");
+        propertyMetaClass.getMethods().add(isPrimitiveMethod);
+    }
+
+    private void addGetter(JavaNestedClass propertyMetaClass, AbstractJavaClass model, JavaField property, JavaType type)
+    {
+        JavaMethod method = Helper.findMethod(model, "get" + property.getName().getCapitalized());
         if (method != null)
         {
-            JavaType getterClass = type(Getter.class, model.getType().getTypeClass(), property.getType().getTypeClass());
+            JavaType getterClass = Helper.type(Getter.class, model.getType().getTypeClass(), type.getTypeClass());
+
             JavaField metaGetterField = New.field(Fields.PUBLIC_STATIC_FINAL, getterClass, "GETTER");
-            metaGetterField.getValue().setHardcoded("new %s(){public %s getValue(%s o){return o.%s();}}", typeSimple(Getter.class, model.getType().getTypeClass(), property.getType().getTypeClass()), property.getType().getSimpleName(),
+            metaGetterField.getValue().setHardcoded("new %s(){public %s getValue(%s object){return object.%s();}}", Helper.typeSimple(Getter.class, model.getType().getTypeClass(), type.getTypeClass()), type.getSimpleName(),
                 model.getType().getSimpleName(), method.getName().toString());
             propertyMetaClass.getFields().add(metaGetterField);
 
-            JavaType metaPropertyType = type(HasGetter.class, model.getType().getTypeClass(), property.getType().getTypeClass());
+            JavaType metaPropertyType = Helper.type(HasGetter.class, model.getType().getTypeClass(), type.getTypeClass());
             propertyMetaClass.getInterfaces().add(metaPropertyType);
 
             JavaMethod getterMethod = New.method(Methods.PUBLIC, getterClass, "getter");
@@ -83,18 +106,19 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
         }
     }
 
-    private void addSetter(JavaNestedClass propertyMetaClass, AbstractJavaClass model, JavaField property)
+    private void addSetter(JavaNestedClass propertyMetaClass, AbstractJavaClass model, JavaField property, JavaType type)
     {
-        JavaMethod method = findMethod(model, "set" + property.getName().getCapitalized());
+        JavaMethod method = Helper.findMethod(model, "set" + property.getName().getCapitalized(), property.getType());
         if (method != null)
         {
-            JavaType setterClass = type(Setter.class, model.getType().getTypeClass(), property.getType().getTypeClass());
+            JavaType setterClass = Helper.type(Setter.class, model.getType().getTypeClass(), type.getTypeClass());
+
             JavaField metaSetterField = New.field(Fields.PUBLIC_STATIC_FINAL, setterClass, "SETTER");
-            metaSetterField.getValue().setHardcoded("new %s(){public void setValue(%s object,%s value){object.%s(value);}}", typeSimple(Setter.class, model.getType().getTypeClass(), property.getType().getTypeClass()),
-                model.getType().getSimpleName(), property.getType().getSimpleName(), method.getName().toString());
+            metaSetterField.getValue().setHardcoded("new %s(){public void setValue(%s object,%s value){object.%s(value);}}", Helper.typeSimple(Setter.class, model.getType().getTypeClass(), type.getTypeClass()),
+                model.getType().getSimpleName(), type.getSimpleName(), method.getName().toString());
             propertyMetaClass.getFields().add(metaSetterField);
 
-            JavaType metaPropertyType = type(HasSetter.class, model.getType().getTypeClass(), property.getType().getTypeClass());
+            JavaType metaPropertyType = Helper.type(HasSetter.class, model.getType().getTypeClass(), type.getTypeClass());
             propertyMetaClass.getInterfaces().add(metaPropertyType);
 
             JavaMethod setterMethod = New.method(Methods.PUBLIC, setterClass, "setter");
@@ -103,24 +127,11 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
         }
     }
 
-    private JavaMethod findMethod(AbstractJavaClass model, String name)
+    private void addMetaTypeProperty(JavaNestedClass propertyMetaClass, JavaField property, JavaType type)
     {
-        for (JavaMethod method : model.getMethods())
-        {
-            if (method.getName().toString().equals(name))
-            {
-                return method;
-            }
-
-        }
-        return null;
-    }
-
-    private void addMetaTypeProperty(JavaNestedClass propertyMetaClass, JavaField property)
-    {
-        JavaMethod typePropertyMethod = New.method(Methods.PUBLIC, type(Class.class, property.getType().getTypeClass()), "type");
+        JavaMethod typePropertyMethod = New.method(Methods.PUBLIC, Helper.type(Class.class, type.getTypeClass()), "type");
         typePropertyMethod.getMetadata().add(New.metadata(Override.class));
-        typePropertyMethod.getBody().setHardcoded("return %s.class;", property.getType().getSimpleName());
+        typePropertyMethod.getBody().setHardcoded("return %s.class;", type.getSimpleName());
         propertyMetaClass.getMethods().add(typePropertyMethod);
     }
 
@@ -136,43 +147,7 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
         propertyMetaClass.getMethods().add(namePropertyMethod);
     }
 
-    private static JavaType type(Class<?> clazz, Class<?>... params)
-    {
-        StringBuilder sb = new StringBuilder(clazz.getCanonicalName());
-        if (params != null && params.length > 0)
-        {
-            sb.append('<');
-            int i = 0;
-            for (Class<?> param : params)
-            {
-                sb.append(param.getCanonicalName());
-                if (++i < params.length)
-                {
-                    sb.append(',');
-                }
-            }
-            sb.append('>');
-        }
-        return New.type(sb.toString());
-    }
 
-    private static String typeSimple(Class<?> clazz, Class<?>... params)
-    {
-        StringBuilder sb = new StringBuilder(clazz.getSimpleName());
-        if (params != null && params.length > 0)
-        {
-            sb.append('<');
-            int i = 0;
-            for (Class<?> param : params)
-            {
-                sb.append(param.getSimpleName());
-                if (++i < params.length)
-                {
-                    sb.append(',');
-                }
-            }
-            sb.append('>');
-        }
-        return sb.toString();
-    }
+
+
 }
