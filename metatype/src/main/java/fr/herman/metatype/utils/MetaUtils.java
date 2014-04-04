@@ -35,7 +35,11 @@ public final class MetaUtils
 
     public static <T, O> Collection<T> collect(Collection<O> input, Collection<T> output, HasGetter<O, T> meta)
     {
-        Getter<O, T> getter = meta.getter();
+        return collect(input, output, meta.getter());
+    }
+
+    public static <T, O> Collection<T> collect(Collection<O> input, Collection<T> output, Getter<O, T> getter)
+    {
         for (O object : input)
         {
             output.add(getter.getValue(object));
