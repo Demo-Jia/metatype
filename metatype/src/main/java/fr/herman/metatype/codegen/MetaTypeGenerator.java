@@ -49,7 +49,7 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
 
                     addIsPrimitive(propertyMetaClass, isPrimitive);
 
-                    JavaType metaPropertyType = Helper.type(MetaProperty.class, model.getType().getTypeClass(), type.getTypeClass());
+                    JavaType metaPropertyType = Helper.type(MetaProperty.class, model.getType(), type);
                     propertyMetaClass.getInterfaces().add(metaPropertyType);
                     metaClass.getNestedClasses().add(propertyMetaClass);
 
@@ -90,14 +90,15 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
         JavaMethod method = Helper.findMethod(model, "get" + property.getName().getCapitalized());
         if (method != null)
         {
-            JavaType getterClass = Helper.type(Getter.class, model.getType().getTypeClass(), type.getTypeClass());
+            JavaType getterClass = Helper.type(Getter.class, model.getType(), type);
 
             JavaField metaGetterField = New.field(Fields.PUBLIC_STATIC_FINAL, getterClass, "GETTER");
-            metaGetterField.getValue().setHardcoded("new %s(){public %s getValue(%s object){return object.%s();}}", Helper.typeSimple(Getter.class, model.getType().getTypeClass(), type.getTypeClass()), type.getSimpleName(),
-                model.getType().getSimpleName(), method.getName().toString());
+            metaGetterField.getValue().setHardcoded("new %s(){public %s getValue(%s object){return object.%s();}}", Helper.type(Getter.class, model.getType(), type).getCanonicalName(), type.getCanonicalName(),
+                model.getType().getCanonicalName(),
+                method.getName().toString());
             propertyMetaClass.getFields().add(metaGetterField);
 
-            JavaType metaPropertyType = Helper.type(HasGetter.class, model.getType().getTypeClass(), type.getTypeClass());
+            JavaType metaPropertyType = Helper.type(HasGetter.class, model.getType(), type);
             propertyMetaClass.getInterfaces().add(metaPropertyType);
 
             JavaMethod getterMethod = New.method(Methods.PUBLIC, getterClass, "getter");
@@ -111,14 +112,15 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
         JavaMethod method = Helper.findMethod(model, "set" + property.getName().getCapitalized(), property.getType());
         if (method != null)
         {
-            JavaType setterClass = Helper.type(Setter.class, model.getType().getTypeClass(), type.getTypeClass());
+            JavaType setterClass = Helper.type(Setter.class, model.getType(), type);
 
             JavaField metaSetterField = New.field(Fields.PUBLIC_STATIC_FINAL, setterClass, "SETTER");
-            metaSetterField.getValue().setHardcoded("new %s(){public void setValue(%s object,%s value){object.%s(value);}}", Helper.typeSimple(Setter.class, model.getType().getTypeClass(), type.getTypeClass()),
-                model.getType().getSimpleName(), type.getSimpleName(), method.getName().toString());
+            metaSetterField.getValue().setHardcoded("new %s(){public void setValue(%s object,%s value){object.%s(value);}}", Helper.type(Setter.class, model.getType(), type).getCanonicalName(), model.getType().getCanonicalName(),
+                type.getCanonicalName(),
+                method.getName().toString());
             propertyMetaClass.getFields().add(metaSetterField);
 
-            JavaType metaPropertyType = Helper.type(HasSetter.class, model.getType().getTypeClass(), type.getTypeClass());
+            JavaType metaPropertyType = Helper.type(HasSetter.class, model.getType(), type);
             propertyMetaClass.getInterfaces().add(metaPropertyType);
 
             JavaMethod setterMethod = New.method(Methods.PUBLIC, setterClass, "setter");
@@ -129,7 +131,7 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
 
     private void addMetaTypeProperty(JavaNestedClass propertyMetaClass, JavaField property, JavaType type)
     {
-        JavaMethod typePropertyMethod = New.method(Methods.PUBLIC, Helper.type(Class.class, type.getTypeClass()), "type");
+        JavaMethod typePropertyMethod = New.method(Methods.PUBLIC, New.type(Class.class), "type");
         typePropertyMethod.getMetadata().add(New.metadata(Override.class));
         typePropertyMethod.getBody().setHardcoded("return %s.class;", type.getSimpleName());
         propertyMetaClass.getMethods().add(typePropertyMethod);

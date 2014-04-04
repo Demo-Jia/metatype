@@ -4,6 +4,7 @@ import static java.lang.String.format;
 import java.util.EnumMap;
 import java.util.Map;
 import org.jannocessor.collection.api.PowerList;
+import org.jannocessor.model.bean.type.JavaDeclaredTypeBean;
 import org.jannocessor.model.executable.JavaMethod;
 import org.jannocessor.model.structure.AbstractJavaClass;
 import org.jannocessor.model.type.JavaType;
@@ -60,42 +61,30 @@ public final class Helper
 
     public static JavaType type(Class<?> clazz, Class<?>... params)
     {
-        StringBuilder sb = new StringBuilder(clazz.getCanonicalName());
-        if (params != null && params.length > 0)
-        {
-            sb.append('<');
-            int i = 0;
-            for (Class<?> param : params)
-            {
-                sb.append(param.getCanonicalName());
-                if (++i < params.length)
-                {
-                    sb.append(',');
-                }
-            }
-            sb.append('>');
-        }
-        return New.type(sb.toString());
+        JavaDeclaredTypeBean type = new JavaDeclaredTypeBean();
+        type.setSimpleName(New.name(clazz.getSimpleName()));
+        type.setPackageName(clazz.getPackage() != null ? New.name(clazz.getPackage().getName()) : null);
+        type.setTypeClass(clazz);
+        type.setKind(New.typeKind(clazz));
+
+        type.setCode(New.code(JavaType.class));
+        type.setExtraCode(New.code());
+        type.setTypeArguments(New.types(params));
+        return type;
     }
 
-    public static String typeSimple(Class<?> clazz, Class<?>... params)
+    public static JavaType type(Class<?> clazz, JavaType... params)
     {
-        StringBuilder sb = new StringBuilder(clazz.getSimpleName());
-        if (params != null && params.length > 0)
-        {
-            sb.append('<');
-            int i = 0;
-            for (Class<?> param : params)
-            {
-                sb.append(param.getSimpleName());
-                if (++i < params.length)
-                {
-                    sb.append(',');
-                }
-            }
-            sb.append('>');
-        }
-        return sb.toString();
+        JavaDeclaredTypeBean type = new JavaDeclaredTypeBean();
+        type.setSimpleName(New.name(clazz.getSimpleName()));
+        type.setPackageName(clazz.getPackage() != null ? New.name(clazz.getPackage().getName()) : null);
+        type.setTypeClass(clazz);
+        type.setKind(New.typeKind(clazz));
+
+        type.setCode(New.code(JavaType.class));
+        type.setExtraCode(New.code());
+        type.setTypeArguments(New.types(params));
+        return type;
     }
 
     public static JavaType fromPrimitive(JavaType type)
@@ -107,4 +96,5 @@ public final class Helper
         }
         throw new RuntimeException(format("type %s is not a primitive", type));
     }
+
 }
