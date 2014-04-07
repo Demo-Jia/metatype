@@ -1,12 +1,18 @@
 package fr.herman.metatype.codegen;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import org.jannocessor.collection.api.PowerList;
+import org.jannocessor.data.JavaWildcardTypeData;
 import org.jannocessor.extra.processor.AbstractGenerator;
+import org.jannocessor.model.code.JavaBody;
 import org.jannocessor.model.executable.JavaMethod;
 import org.jannocessor.model.structure.AbstractJavaClass;
 import org.jannocessor.model.structure.JavaClass;
 import org.jannocessor.model.structure.JavaNestedClass;
 import org.jannocessor.model.type.JavaType;
+import org.jannocessor.model.type.JavaTypeKind;
 import org.jannocessor.model.util.Classes;
 import org.jannocessor.model.util.Fields;
 import org.jannocessor.model.util.Methods;
@@ -34,11 +40,12 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
         context.getLogger().info("Start to generate MetaModel");
         for (AbstractJavaClass model : models)
         {
+            context.getLogger().info("Process " + model.getName());
             try
             {
                 String metaClassName = model.getName().toString() + "MetaType";
                 JavaClass metaClass = New.classs(Classes.PUBLIC, metaClassName);
-
+                List<JavaField> properties = new LinkedList<JavaField>();
                 for (JavaField property : model.getFields())
                 {
                     String propertyName = property.getName().toString();
@@ -60,9 +67,10 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
 
                     JavaField metaPropertyField = New.field(Fields.PUBLIC_STATIC_FINAL, New.type(propertyMetaClassName), propertyName);
                     metaPropertyField.getValue().setHardcoded("new %s()", propertyMetaClassName);
-
+                    properties.add(metaPropertyField);
                     metaClass.getFields().add(metaPropertyField);
                 }
+                // addPropertiesList(model, metaClass, properties);
 
                 generate(metaClass);
             }
@@ -73,6 +81,29 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
             }
         }
 
+    }
+
+    public void addPropertiesList(AbstractJavaClass model, JavaClass metaClass, List<JavaField> properties)
+    {
+        JavaWildcardTypeData wildcardType = (JavaWildcardTypeData) New.wildcardType();
+        wildcardType.setKind(JavaTypeKind.WILDCARD);
+        wildcardType.setSimpleName(New.name("?"));
+        metaClass.getFields().add(New.field(Fields.PRIVATE_STATIC_FINAL, Helper.type(List.class, Helper.type(MetaProperty.class, model.getType(), wildcardType)), "PROPERTIES"));
+        StringBuilder sb = new StringBuilder();
+        sb.append("PROPERTIES = new ");
+        sb.append(New.type(ArrayList.class).getCanonicalName());
+        sb.append("(");
+        sb.append(properties.size());
+        sb.append(");\n");
+        for (JavaField property : properties)
+        {
+            sb.append("PROPERTIES");
+            sb.append(".add(");
+            sb.append(property.getName());
+            sb.append(");\n");
+        }
+        JavaBody body = New.body(sb.toString());
+        metaClass.getStaticInits().add(New.staticInit(body));
     }
 
     private void addIsPrimitive(JavaNestedClass propertyMetaClass, boolean isPrimitive)

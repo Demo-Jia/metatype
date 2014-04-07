@@ -8,6 +8,8 @@ import java.util.Map;
 import fr.herman.metatype.model.MetaProperty;
 import fr.herman.metatype.model.method.Getter;
 import fr.herman.metatype.model.method.HasGetter;
+import fr.herman.metatype.model.method.HasSetter;
+import fr.herman.metatype.model.method.Setter;
 
 public final class MetaUtils
 {
@@ -90,5 +92,20 @@ public final class MetaUtils
             map.put(meta.name(), meta.getter().getValue(object));
         }
         return map;
+    }
+
+    @SafeVarargs
+    public static <O, P extends HasGetter<O, ?> & HasSetter<O, ?>> void applyTo(O from, O to, P... properties)
+    {
+        if (from != null && to != null && properties != null)
+        {
+            for (P property : properties)
+            {
+
+                Object value = property.getter().getValue(from);
+                Setter<O, Object> setter = (Setter<O, Object>) property.setter();
+                setter.setValue(to, value);
+            }
+        }
     }
 }

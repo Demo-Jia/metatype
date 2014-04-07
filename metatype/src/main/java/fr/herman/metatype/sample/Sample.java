@@ -14,7 +14,7 @@ public class Sample
 
     private Date         date;
 
-    private Collection<Boolean> bools;
+    private Collection<Boolean> booleans;
 
     public String getHello()
     {
@@ -51,13 +51,13 @@ public class Sample
         this.date = date;
     }
 
-    public Collection<Boolean> getBools()
+    public Collection<Boolean> getBooleans()
     {
-        return bools;
+        return booleans;
     }
 
-    public void setBools(Collection<Boolean> bools)
+    public void setBooleans(Collection<Boolean> bools)
     {
-        this.bools = bools;
+        booleans = bools;
     }
 }
