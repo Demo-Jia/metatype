@@ -1,8 +1,10 @@
 package fr.herman.metatype.codegen;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import org.jannocessor.collection.api.PowerList;
 import org.jannocessor.data.JavaWildcardTypeData;
 import org.jannocessor.extra.processor.AbstractGenerator;
@@ -38,13 +40,34 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
     protected void generateCodeFrom(PowerList<AbstractJavaClass> models, ProcessingContext context)
     {
         context.getLogger().info("Start to generate MetaModel");
+        Map<JavaType, AbstractJavaClass> types = new HashMap<JavaType, AbstractJavaClass>();
         for (AbstractJavaClass model : models)
         {
+            types.put(model.getType(), model);
+            // JavaType superclass = findSuperClass(model);
+            // while (superclass != null)
+            // {
+            // superclass = findSuperClass(model);
+            // }
+        }
+        for (AbstractJavaClass model : types.values())
+        {
+            context.generateInfo(model, false);
             context.getLogger().info("Process " + model.getName());
             try
             {
-                String metaClassName = model.getName().toString() + "MetaType";
-                JavaClass metaClass = New.classs(Classes.PUBLIC, metaClassName);
+                JavaClass metaClass = null;
+                JavaType superClass = findSuperClass(model);
+                if (superClass != null)
+                {
+                    System.err.println("yes");
+                    metaClass = New.classs(Classes.PUBLIC, model.getName().toString() + "MetaType", New.classs(superClass.getSimpleName().toString() + "MetaType").getType());
+                }
+                else
+                {
+                    metaClass = New.classs(Classes.PUBLIC, model.getName().toString() + "MetaType");
+                }
+
                 List<JavaField> properties = new LinkedList<JavaField>();
                 for (JavaField property : model.getFields())
                 {
@@ -81,6 +104,16 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
             }
         }
 
+    }
+
+    private JavaType findSuperClass(AbstractJavaClass model)
+    {
+        JavaType superclass = model.getSuperclass();
+        if (superclass.getTypeClass() == Object.class)
+        {
+            return null;
+        }
+        return superclass;
     }
 
     public void addPropertiesList(AbstractJavaClass model, JavaClass metaClass, List<JavaField> properties)

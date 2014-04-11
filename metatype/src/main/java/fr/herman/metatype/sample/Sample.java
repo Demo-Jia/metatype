@@ -2,9 +2,11 @@ package fr.herman.metatype.sample;
 
 import java.util.Collection;
 import java.util.Date;
+import com.mysema.query.annotations.QueryEntity;
 import fr.herman.metatype.annotation.Bean;
 
 @Bean
+@QueryEntity
 public class Sample
 {
     private String       hello;
