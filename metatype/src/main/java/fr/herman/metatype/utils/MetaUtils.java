@@ -8,7 +8,7 @@ import java.util.Map;
 import fr.herman.metatype.model.MetaProperty;
 import fr.herman.metatype.model.method.Getter;
 import fr.herman.metatype.model.method.HasGetter;
-import fr.herman.metatype.model.method.HasSetter;
+import fr.herman.metatype.model.method.HasGetterSetter;
 import fr.herman.metatype.model.method.Setter;
 
 public final class MetaUtils
@@ -54,9 +54,14 @@ public final class MetaUtils
         return collect(input, new ArrayList<T>(input.size()), meta);
     }
 
-    public static <T, O> Collection<T> collectSet(Collection<O> input, HasGetter<O, T> meta)
+    public static <T, O> Collection<T> collectDistinct(Collection<O> input, HasGetter<O, T> meta)
     {
-        return collect(input, new HashSet<T>((int) (input.size() * FACTOR)), meta);
+        return collectDistinct(input, meta, (int) (input.size() * FACTOR));
+    }
+
+    public static <T, O> Collection<T> collectDistinct(Collection<O> input, HasGetter<O, T> meta, int estimatedSize)
+    {
+        return collect(input, new HashSet<T>(estimatedSize), meta);
     }
 
     public static <T, O> Map<T, Integer> frequency(Collection<O> input, HasGetter<O, T> meta)
@@ -95,17 +100,24 @@ public final class MetaUtils
     }
 
     @SafeVarargs
-    public static <O, P extends HasGetter<O, ?> & HasSetter<O, ?>> void applyTo(O from, O to, P... properties)
+    public static <O> void applyTo(O from, O to, HasGetterSetter<O, ?>... properties)
     {
         if (from != null && to != null && properties != null)
         {
-            for (P property : properties)
+            for (HasGetterSetter<O, ?> property : properties)
             {
-
-                Object value = property.getter().getValue(from);
-                Setter<O, Object> setter = (Setter<O, Object>) property.setter();
-                setter.setValue(to, value);
+                copyValue(from, to, property);
             }
         }
+    }
+
+    public static <O, V> void copyValue(O from, O to, HasGetterSetter<O, V> property)
+    {
+        copyValue(from, to, property.getter(), property.setter());
+    }
+
+    public static <FROM, TO, V> void copyValue(FROM from, TO to, Getter<FROM, V> getter, Setter<TO, V> setter)
+    {
+        setter.setValue(to, getter.getValue(from));
     }
 }

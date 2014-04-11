@@ -29,19 +29,10 @@
                             <goal>process</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>target/generated-sources/java</outputDirectory>
-                            <processor>com.mysema.query.apt.QuerydslAnnotationProcessor</processor>
+                            <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
+                            <processor>org.jannocessor.processor.JannocessorProcessor</processor>
                         </configuration>
                     </execution>
-<!--                     <execution> -->
-<!--                         <goals> -->
-<!--                             <goal>process</goal> -->
-<!--                         </goals> -->
-<!--                         <configuration> -->
-<!--                             <outputDirectory>${project.build.directory}/generated-sources</outputDirectory> -->
-<!--                             <processor>org.jannocessor.processor.JannocessorProcessor</processor> -->
-<!--                         </configuration> -->
-<!--                     </execution> -->
                 </executions>
             </plugin>
         </plugins>
@@ -56,24 +47,6 @@
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <version>6.8.8</version>
-        </dependency>
-        <dependency>
-            <groupId>com.mysema.querydsl</groupId>
-            <artifactId>querydsl-apt</artifactId>
-            <version>${querydsl.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.mysema.querydsl</groupId>
-            <artifactId>querydsl-collections</artifactId>
-            <version>${querydsl.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.6.1</version>
         </dependency>
     </dependencies>
 </project>

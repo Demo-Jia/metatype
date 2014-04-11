@@ -1,10 +1,10 @@
 package fr.herman.metatype.codegen;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import org.jannocessor.collection.api.PowerList;
 import org.jannocessor.data.JavaWildcardTypeData;
 import org.jannocessor.extra.processor.AbstractGenerator;
@@ -25,6 +25,7 @@ import org.jannocessor.processor.api.ProcessingContext;
 import fr.herman.metatype.model.MetaProperty;
 import fr.herman.metatype.model.method.Getter;
 import fr.herman.metatype.model.method.HasGetter;
+import fr.herman.metatype.model.method.HasGetterSetter;
 import fr.herman.metatype.model.method.HasSetter;
 import fr.herman.metatype.model.method.Setter;
 
@@ -40,28 +41,25 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
     protected void generateCodeFrom(PowerList<AbstractJavaClass> models, ProcessingContext context)
     {
         context.getLogger().info("Start to generate MetaModel");
-        Map<JavaType, AbstractJavaClass> types = new HashMap<JavaType, AbstractJavaClass>();
+        Set<Class<?>> pool = new HashSet<Class<?>>();
         for (AbstractJavaClass model : models)
         {
-            types.put(model.getType(), model);
-            // JavaType superclass = findSuperClass(model);
-            // while (superclass != null)
-            // {
-            // superclass = findSuperClass(model);
-            // }
+            pool.add(model.getType().getTypeClass());
         }
-        for (AbstractJavaClass model : types.values())
+
+        for (AbstractJavaClass model : models)
         {
             context.generateInfo(model, false);
             context.getLogger().info("Process " + model.getName());
             try
             {
                 JavaClass metaClass = null;
-                JavaType superClass = findSuperClass(model);
+                JavaType superClass = findSuperClass(pool, model.getType().getTypeClass());
                 if (superClass != null)
                 {
-                    System.err.println("yes");
-                    metaClass = New.classs(Classes.PUBLIC, model.getName().toString() + "MetaType", New.classs(superClass.getSimpleName().toString() + "MetaType").getType());
+                    JavaType superType = New.type(superClass.getSimpleName().toString() + "MetaType");
+                    metaClass = New.classs(Classes.PUBLIC, model.getName().toString() + "MetaType", superType);
+                    System.err.println(metaClass);
                 }
                 else
                 {
@@ -85,8 +83,13 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
 
                     addMetaNameProperty(propertyMetaClass, propertyName);
                     addMetaTypeProperty(propertyMetaClass, property, type);
-                    addGetter(propertyMetaClass, model, property, type);
-                    addSetter(propertyMetaClass, model, property, type);
+                    boolean hasGetter = addGetter(propertyMetaClass, model, property, type);
+                    boolean hasSetter = addSetter(propertyMetaClass, model, property, type);
+                    if (hasGetter && hasSetter)
+                    {
+                        JavaType hasGetterSetter = Helper.type(HasGetterSetter.class, model.getType(), type);
+                        propertyMetaClass.getInterfaces().add(hasGetterSetter);
+                    }
 
                     JavaField metaPropertyField = New.field(Fields.PUBLIC_STATIC_FINAL, New.type(propertyMetaClassName), propertyName);
                     metaPropertyField.getValue().setHardcoded("new %s()", propertyMetaClassName);
@@ -106,14 +109,18 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
 
     }
 
-    private JavaType findSuperClass(AbstractJavaClass model)
+    private JavaType findSuperClass(Set<Class<?>> pool, Class<?> model)
     {
-        JavaType superclass = model.getSuperclass();
-        if (superclass.getTypeClass() == Object.class)
+        Class<?> superclass = model.getSuperclass();
+        if (superclass == null || superclass == Object.class)
         {
             return null;
         }
-        return superclass;
+        if (pool.contains(superclass))
+        {
+            return New.type(superclass);
+        }
+        return findSuperClass(pool, superclass);
     }
 
     public void addPropertiesList(AbstractJavaClass model, JavaClass metaClass, List<JavaField> properties)
@@ -149,14 +156,14 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
         propertyMetaClass.getMethods().add(isPrimitiveMethod);
     }
 
-    private void addGetter(JavaNestedClass propertyMetaClass, AbstractJavaClass model, JavaField property, JavaType type)
+    private boolean addGetter(JavaNestedClass propertyMetaClass, AbstractJavaClass model, JavaField property, JavaType type)
     {
         JavaMethod method = Helper.findMethod(model, "get" + property.getName().getCapitalized());
         if (method != null)
         {
             JavaType getterClass = Helper.type(Getter.class, model.getType(), type);
 
-            JavaField metaGetterField = New.field(Fields.PUBLIC_STATIC_FINAL, getterClass, "GETTER");
+            JavaField metaGetterField = New.field(Fields.PRIVATE_STATIC_FINAL, getterClass, "GETTER");
             metaGetterField.getValue().setHardcoded("new %s(){public %s getValue(%s object){return object.%s();}}", Helper.type(Getter.class, model.getType(), type).getCanonicalName(), type.getCanonicalName(),
                 model.getType().getCanonicalName(),
                 method.getName().toString());
@@ -168,17 +175,19 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
             JavaMethod getterMethod = New.method(Methods.PUBLIC, getterClass, "getter");
             getterMethod.getBody().setHardcoded("return GETTER;");
             propertyMetaClass.getMethods().add(getterMethod);
+            return true;
         }
+        return false;
     }
 
-    private void addSetter(JavaNestedClass propertyMetaClass, AbstractJavaClass model, JavaField property, JavaType type)
+    private boolean addSetter(JavaNestedClass propertyMetaClass, AbstractJavaClass model, JavaField property, JavaType type)
     {
         JavaMethod method = Helper.findMethod(model, "set" + property.getName().getCapitalized(), property.getType());
         if (method != null)
         {
             JavaType setterClass = Helper.type(Setter.class, model.getType(), type);
 
-            JavaField metaSetterField = New.field(Fields.PUBLIC_STATIC_FINAL, setterClass, "SETTER");
+            JavaField metaSetterField = New.field(Fields.PRIVATE_STATIC_FINAL, setterClass, "SETTER");
             metaSetterField.getValue().setHardcoded("new %s(){public void setValue(%s object,%s value){object.%s(value);}}", Helper.type(Setter.class, model.getType(), type).getCanonicalName(), model.getType().getCanonicalName(),
                 type.getCanonicalName(),
                 method.getName().toString());
@@ -190,12 +199,17 @@ public class MetaTypeGenerator extends AbstractGenerator<AbstractJavaClass>
             JavaMethod setterMethod = New.method(Methods.PUBLIC, setterClass, "setter");
             setterMethod.getBody().setHardcoded("return SETTER;");
             propertyMetaClass.getMethods().add(setterMethod);
+            return true;
         }
+        return false;
     }
 
     private void addMetaTypeProperty(JavaNestedClass propertyMetaClass, JavaField property, JavaType type)
     {
-        JavaMethod typePropertyMethod = New.method(Methods.PUBLIC, New.type(Class.class), "type");
+        JavaWildcardTypeData wildcardType = (JavaWildcardTypeData) New.wildcardType();
+        wildcardType.setKind(JavaTypeKind.WILDCARD);
+        wildcardType.setSimpleName(New.name("?"));
+        JavaMethod typePropertyMethod = New.method(Methods.PUBLIC, Helper.type(Class.class, wildcardType), "type");
         typePropertyMethod.getMetadata().add(New.metadata(Override.class));
         typePropertyMethod.getBody().setHardcoded("return %s.class;", type.getSimpleName());
         propertyMetaClass.getMethods().add(typePropertyMethod);
