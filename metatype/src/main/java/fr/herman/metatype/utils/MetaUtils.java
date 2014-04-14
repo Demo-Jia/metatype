@@ -54,12 +54,12 @@ public final class MetaUtils
         return collect(input, new ArrayList<T>(input.size()), meta);
     }
 
-    public static <T, O> Collection<T> collectDistinct(Collection<O> input, HasGetter<O, T> meta)
+    public static <T, O> Collection<T> distinct(Collection<O> input, HasGetter<O, T> meta)
     {
-        return collectDistinct(input, meta, (int) (input.size() * FACTOR));
+        return distinct(input, meta, (int) (input.size() * FACTOR));
     }
 
-    public static <T, O> Collection<T> collectDistinct(Collection<O> input, HasGetter<O, T> meta, int estimatedSize)
+    public static <T, O> Collection<T> distinct(Collection<O> input, HasGetter<O, T> meta, int estimatedSize)
     {
         return collect(input, new HashSet<T>(estimatedSize), meta);
     }
