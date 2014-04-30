@@ -2,9 +2,7 @@ package fr.herman.metatype.sample;
 
 import java.util.Collection;
 import java.util.Date;
-import fr.herman.metatype.annotation.Bean;
 
-@Bean
 public class Sample
 {
     private String       hello;

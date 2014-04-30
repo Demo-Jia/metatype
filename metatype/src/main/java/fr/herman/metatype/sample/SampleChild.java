@@ -6,6 +6,17 @@ import fr.herman.metatype.annotation.Bean;
 public class SampleChild extends Sample
 {
     private String[] stringArray;
+    private int[]    intArray;
+
+    public int[] getIntArray()
+    {
+        return intArray;
+    }
+
+    public void setIntArray(int[] intArray)
+    {
+        this.intArray = intArray;
+    }
 
     public String[] getStringArray()
     {

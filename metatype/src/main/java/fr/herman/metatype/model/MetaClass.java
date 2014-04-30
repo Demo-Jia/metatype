@@ -1,5 +1,6 @@
 package fr.herman.metatype.model;
 
-public interface MetaClass {
+public interface MetaClass
+{
 
 }
