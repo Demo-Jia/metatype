@@ -2,5 +2,5 @@ language: java
 script: mvn clean deploy
 env:
   global:
-    - TRAVIS_BUILD_DIR=/metatype/
+    TRAVIS_BUILD_DIR=/metatype/
     secure: gw6W+ARZDIh77t0IiNsEQIA/++NK1YybAI8zvdmtst71/n1HjYuVafwzTP4xB8volFm/ZfSLLzoaeOLxkO8C9Mi0OMma17drOjPq4/bi7cijEQyskLAP+yXp/n03jeHzJVrj7Yrmd01lTpIQmtVpasPy7fwoJfConP6ykS/3xmQ=
