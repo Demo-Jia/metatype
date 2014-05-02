@@ -5,9 +5,34 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>MetaType</name>
     <description>Meta model generator for high performance and functional programming</description>
-    <properties>
-        <querydsl.version>3.3.2</querydsl.version>
-    </properties>
+    <developers>
+        <developer>
+            <name>Marc HERMAN</name>
+            <id>garc33</id>
+        </developer>
+    </developers>
+    <url>https://github.com/garc33/metatype</url>
+    <scm>
+        <url>https://github.com/garc33/metatype.git</url>
+    </scm>
+    <dependencies>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>6.8.8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup</groupId>
+            <artifactId>javawriter</artifactId>
+            <version>2.5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.12.6</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <plugin>
@@ -35,24 +60,44 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.7</version>
+                <configuration>
+                    <altDeploymentRepository>internal.repo::default::file://${built.repo.dir}</altDeploymentRepository>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.github</groupId>
+                <artifactId>site-maven-plugin</artifactId>
+                <version>0.8</version>
+                <configuration>
+                    <message>Maven artifacts for
+                        ${project.groupId}:${project.artifactId}:${project.version}
+                        ~${maven.build.timestamp}</message>
+                    <noJekyll>true</noJekyll>
+                    <outputDirectory>${built.repo.dir}</outputDirectory>
+                    <merge>true</merge>
+
+                    <repositoryOwner>garc33</repositoryOwner>
+                    <repositoryName>m2p2-repository</repositoryName>
+                    <branch>refs/heads/mvn-repo</branch>
+                    <path>maven/snapshots</path>
+                    <oauth2Token>${env.MY_SECRET_ENV}</oauth2Token>
+
+                    <includes>
+                        <include>**/*</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>site</goal>
+                        </goals>
+                        <phase>deploy</phase>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-    <dependencies>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>6.8.8</version>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup</groupId>
-            <artifactId>javawriter</artifactId>
-            <version>2.5.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.12.6</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
 </project>
