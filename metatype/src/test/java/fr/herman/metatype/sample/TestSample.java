@@ -5,9 +5,10 @@ import java.util.Collection;
 import java.util.Iterator;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import fr.herman.metatype.model.MetaProperty;
 import fr.herman.metatype.utils.MetaUtils;
 
-public class SampleTest
+public class TestSample
 {
     @Test
     public void test()
@@ -27,5 +28,21 @@ public class SampleTest
         Assert.assertEquals("world", it.next());
         Assert.assertFalse(it.hasNext());
 
+    }
+
+    @Test
+    public void testProperties()
+    {
+        Assert.assertTrue(SampleMeta.PROPERTIES.contains(SampleMeta.booleans));
+        Assert.assertTrue(SampleMeta.PROPERTIES.contains(SampleMeta.date));
+        Assert.assertTrue(SampleMeta.PROPERTIES.contains(SampleMeta.hello));
+        Assert.assertTrue(SampleMeta.PROPERTIES.contains(SampleMeta.truc));
+        Assert.assertTrue(SampleMeta.PROPERTIES.contains(SampleMeta.whithoutsetter));
+        for (MetaProperty property : SampleMeta.PROPERTIES)
+        {
+            Assert.assertTrue(SampleChildMeta.PROPERTIES.contains(property));
+        }
+        Assert.assertTrue(SampleChildMeta.PROPERTIES.contains(SampleChildMeta.intarray));
+        Assert.assertTrue(SampleChildMeta.PROPERTIES.contains(SampleChildMeta.stringarray));
     }
 }

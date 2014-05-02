@@ -90,19 +90,4 @@ public class JavaWriter2 extends JavaWriter
     {
         return emitSimpleMethod(propertyType, format("get%s", WordUtils.capitalize(propertyName)), format("return %s", propertyName));
     }
-
-    // public String type(Class<?> main,String... parameters){
-    // StringBuilder sb = new StringBuilder();
-    // sb.append(rawType(main.getCanonicalName()));
-    // if(parameters!=null&&parameters.length>0){
-    // sb.append('<');
-    // sb.append(parameters[0]);
-    // for(int i=1;i<parameters.length;i++){
-    // sb.append(',');
-    // sb.append(parameters[i]);
-    // }
-    // sb.append('>');
-    // }
-    // return sb.toString();
-    // }
 }

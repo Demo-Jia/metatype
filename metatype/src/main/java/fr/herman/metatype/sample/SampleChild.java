@@ -7,6 +7,9 @@ public class SampleChild extends Sample
 {
     private String[] stringArray;
     private int[]    intArray;
+    private String   childString;
+
+    private Sample   sample;
 
     public int[] getIntArray()
     {
@@ -26,5 +29,25 @@ public class SampleChild extends Sample
     public void setStringArray(String[] stringArray)
     {
         this.stringArray = stringArray;
+    }
+
+    public Sample getSample()
+    {
+        return sample;
+    }
+
+    public void setSample(Sample sample)
+    {
+        this.sample = sample;
+    }
+
+    public String getChildString()
+    {
+        return childString;
+    }
+
+    public void setChildString(String childString)
+    {
+        this.childString = childString;
     }
 }
