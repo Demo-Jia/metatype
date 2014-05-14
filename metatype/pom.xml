@@ -15,6 +15,9 @@
     <scm>
         <url>https://github.com/garc33/metatype.git</url>
     </scm>
+    <properties>
+        <built.repo.dir>${project.build.directory}/repo</built.repo.dir>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.testng</groupId>
