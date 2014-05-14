@@ -3,5 +3,5 @@ script:
   - cd metatype
   - mvn clean deploy
 env:
-  global:
-    secure: 							 "oNcjVQy6fhufj5IiYlCm3HkdGRFwxUo7hyjmGijKDcXUvDllu12tzQX7n2mGiz6dag14CVJzrSSkunIZR1JoSiUCHBGFm/tJhpGBSRvcrf6C2tOfYcsr5BQb6NOSohDTagpSBJiljzFZ/Gp8t7u8X1UZXqsyTXkHYyB04PB9rX8="
+  global: 
+    secure: "oNcjVQy6fhufj5IiYlCm3HkdGRFwxUo7hyjmGijKDcXUvDllu12tzQX7n2mGiz6dag14CVJzrSSkunIZR1JoSiUCHBGFm/tJhpGBSRvcrf6C2tOfYcsr5BQb6NOSohDTagpSBJiljzFZ/Gp8t7u8X1UZXqsyTXkHYyB04PB9rX8="
