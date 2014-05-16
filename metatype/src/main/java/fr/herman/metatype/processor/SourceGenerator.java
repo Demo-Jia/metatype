@@ -2,7 +2,6 @@ package fr.herman.metatype.processor;
 
 import static java.lang.String.format;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,9 +34,6 @@ public class SourceGenerator
     {
         String STRING = String.class.getCanonicalName();
     }
-
-    private static final String GETTER = "new {0}()'{'\npublic {2} getValue({1} o)'{'\nreturn o.{3}();\n'}\n}'";
-    private static final String SETTER = "new {0}()'{'\npublic void setValue({1} o,{2} value)'{'\no.{3}(value);\n'}\n}'";
 
     private final Context       context;
     private final JavaWriter2   writer;
@@ -149,18 +145,24 @@ public class SourceGenerator
 
         String metaType = WordUtils.capitalize(property.getName()) + "Property";
         List<String> interfaces = new ArrayList<String>();
-        interfaces.add(JavaWriter.type(MetaProperty.class, classMeta.getOriginalType().toString(), property.getType().toString()));
+        String originalType = classMeta.getOriginalType().toString();
+        String propertyType = property.getType().toString();
+        interfaces.add(JavaWriter.type(MetaProperty.class, originalType, propertyType));
         if (hasGetter && hasSetter)
         {
-            interfaces.add(JavaWriter.type(HasGetterSetter.class, classMeta.getOriginalType().toString(), property.getType().toString()));
+            interfaces.add(JavaWriter.type(HasGetterSetter.class, originalType, propertyType));
+            interfaces.add(JavaWriter.type(Getter.class, originalType, propertyType));
+            interfaces.add(JavaWriter.type(Setter.class, originalType, propertyType));
         }
         else if (hasGetter)
         {
-            interfaces.add(JavaWriter.type(HasGetter.class, classMeta.getOriginalType().toString(), property.getType().toString()));
+            interfaces.add(JavaWriter.type(HasGetter.class, originalType, propertyType));
+            interfaces.add(JavaWriter.type(Getter.class, originalType, propertyType));
         }
         else if (hasSetter)
         {
-            interfaces.add(JavaWriter.type(HasSetter.class, classMeta.getOriginalType().toString(), property.getType().toString()));
+            interfaces.add(JavaWriter.type(HasSetter.class, originalType, propertyType));
+            interfaces.add(JavaWriter.type(Setter.class, originalType, propertyType));
         }
 
         writer.beginClass(metaType, EnumSet.of(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL), null, interfaces.toArray(new String[interfaces.size()]));
@@ -175,25 +177,27 @@ public class SourceGenerator
             writeSetter(property.getSetter());
         }
         writer.emitSimpleMethod("Class<?>", "type", format("return %s.class", writer.compressType(raw(property.getType()))));
-        writer.emitCustomGetter(JavaWriter.type(Class.class, classMeta.getOriginalType().toString()), classMeta.getSimpleName() + ".TYPE", "modelType");
+        writer.emitCustomGetter(JavaWriter.type(Class.class, originalType), classMeta.getSimpleName() + ".TYPE", "modelType");
         writer.endClass();
         writer.emitConstant(metaType, property.getName(), Modifier.PUBLIC, format("new %s()", writer.compressType(metaType)));
     }
 
     private void writeGetter(GetterMeta getter) throws IOException
     {
+        writer.beginMethod(getter.getValueType().toString(), "getValue", EnumSet.of(Modifier.PUBLIC), getter.getObjectType().toString(), "o");
+        writer.emitStatement("return o.%s()", getter.getDelegateMethodName());
+        writer.endMethod();
         String type = JavaWriter.type(Getter.class, getter.getObjectType().toString(), getter.getValueType().toString());
-        String value = MessageFormat.format(GETTER, writer.compressType(type), writer.compressType(getter.getObjectType().toString()), writer.compressType(getter.getValueType().toString()), getter.getDelegateMethodName());
-        writer.emitConstant(type, "GETTER", Modifier.PRIVATE, value);
-        writer.emitCustomGetter(type, "GETTER", "getter");
+        writer.emitCustomGetter(type, "this", "getter");
     }
 
     private void writeSetter(SetterMeta setter) throws IOException
     {
+        writer.beginMethod("void", "setValue", EnumSet.of(Modifier.PUBLIC), setter.getObjectType().toString(), "o", setter.getValueType().toString(), "v");
+        writer.emitStatement("o.%s(v)", setter.getDelegateMethodName());
+        writer.endMethod();
         String type = JavaWriter.type(Setter.class, setter.getObjectType().toString(), setter.getValueType().toString());
-        String value = MessageFormat.format(SETTER, writer.compressType(type), writer.compressType(setter.getObjectType().toString()), writer.compressType(setter.getValueType().toString()), setter.getDelegateMethodName());
-        writer.emitConstant(type, "SETTER", Modifier.PRIVATE, value);
-        writer.emitCustomGetter(type, "SETTER", "setter");
+        writer.emitCustomGetter(type, "this", "setter");
     }
 
 }

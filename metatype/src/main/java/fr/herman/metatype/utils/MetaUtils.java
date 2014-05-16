@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Map;
 import fr.herman.metatype.model.MetaProperty;
 import fr.herman.metatype.model.method.Getter;
-import fr.herman.metatype.model.method.HasGetter;
 import fr.herman.metatype.model.method.HasGetterSetter;
 import fr.herman.metatype.model.method.Setter;
 
@@ -35,10 +34,6 @@ public final class MetaUtils
 
     }
 
-    public static <T, O> Collection<T> collect(Collection<O> input, Collection<T> output, HasGetter<? super O, T> meta)
-    {
-        return collect(input, output, meta.getter());
-    }
 
     public static <T, O> Collection<T> collect(Collection<O> input, Collection<T> output, Getter<? super O, T> getter)
     {
@@ -49,25 +44,24 @@ public final class MetaUtils
         return output;
     }
 
-    public static <T, O> Collection<T> collect(Collection<O> input, HasGetter<? super O, T> meta)
+    public static <T, O> Collection<T> collect(Collection<O> input, Getter<? super O, T> meta)
     {
         return collect(input, new ArrayList<T>(input.size()), meta);
     }
 
-    public static <T, O> Collection<T> distinct(Collection<O> input, HasGetter<? super O, T> meta)
+    public static <T, O> Collection<T> distinct(Collection<O> input, Getter<? super O, T> meta)
     {
         return distinct(input, meta, (int) (input.size() * FACTOR));
     }
 
-    public static <T, O> Collection<T> distinct(Collection<O> input, HasGetter<? super O, T> meta, int estimatedSize)
+    public static <T, O> Collection<T> distinct(Collection<O> input, Getter<? super O, T> meta, int estimatedSize)
     {
         return collect(input, new HashSet<T>(estimatedSize), meta);
     }
 
-    public static <T, O> Map<T, Integer> frequency(Collection<O> input, HasGetter<? super O, T> meta)
+    public static <T, O> Map<T, Integer> frequency(Collection<O> input, Getter<? super O, T> getter)
     {
         Map<T, Counter> frequency = new HashMap<T, Counter>((int) (input.size() * FACTOR));
-        Getter<? super O, T> getter = meta.getter();
         for (O object : input)
         {
             T value = getter.getValue(object);
@@ -89,12 +83,12 @@ public final class MetaUtils
         return output;
     }
 
-    public static <T, O, P extends HasGetter<? super O, T> & MetaProperty<? super O, T>> Map<String, T> toMap(O object, Collection<P> metas)
+    public static <T, O, P extends Getter<? super O, T> & MetaProperty<? super O, T>> Map<String, T> toMap(O object, Collection<P> metas)
     {
         Map<String, T> map = new HashMap<String, T>(metas.size());
         for (P meta : metas)
         {
-            map.put(meta.name(), meta.getter().getValue(object));
+            map.put(meta.name(), meta.getValue(object));
         }
         return map;
     }

@@ -43,11 +43,6 @@ public class ExtendedChainedGetter<FROM, CURRENT, TO> implements Getter<FROM, TO
         this.getters = new LinkedList<Getter<?, ?>>(getters);
     }
 
-    public static <O, V> ExtendedChainedGetter<O, O, V> from(HasGetter<O, V> property)
-    {
-        return from(property.getter());
-    }
-
     public static <O, V> ExtendedChainedGetter<O, O, V> from(Getter<O, V> getter)
     {
         return new ExtendedChainedGetter<O, O, V>().add(getter);

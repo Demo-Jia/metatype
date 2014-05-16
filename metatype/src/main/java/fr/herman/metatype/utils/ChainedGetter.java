@@ -3,7 +3,6 @@ package fr.herman.metatype.utils;
 import java.util.LinkedList;
 import java.util.List;
 import fr.herman.metatype.model.method.Getter;
-import fr.herman.metatype.model.method.HasGetter;
 
 public class ChainedGetter<FROM, CURRENT, TO> implements Getter<FROM, TO>
 {
@@ -19,19 +18,9 @@ public class ChainedGetter<FROM, CURRENT, TO> implements Getter<FROM, TO>
         this.getters = new LinkedList<Getter<?, ?>>(getters);
     }
 
-    public static <O, V> ChainedGetter<O, O, V> from(HasGetter<O, V> property)
-    {
-        return from(property.getter());
-    }
-
     public static <O, V> ChainedGetter<O, O, V> from(Getter<O, V> getter)
     {
         return new ChainedGetter<O, O, V>().add(getter);
-    }
-
-    public <X> ChainedGetter<FROM, TO, X> to(HasGetter<TO, X> property)
-    {
-        return to(property.getter());
     }
 
     public <X> ChainedGetter<FROM, TO, X> to(Getter<TO, X> getter)
