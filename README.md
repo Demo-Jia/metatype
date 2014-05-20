@@ -50,14 +50,90 @@ Configure APT plugin
 Put `@MetaBean` annotation on your class (or interface)
 ```java
 @MetaBean
-public class Sample {
-  private String hello;
-  public String getHello(){
-    return hello;
-  }
-  public void setHello(String hello){
-    this.hello = hello;
-  }
+public class Person
+{
+    private String firstName, lastName;
+
+    public String getFirstName(){
+        return firstName;
+    }
+    public void setFirstName(String firstName){
+        this.firstName = firstName;
+    }
+    public String getLastName(){
+        return lastName;
+    }
+    public void setLastName(String lastName){
+        this.lastName = lastName;
+    }
+    //customize property
+    @MetaGetter("initials")
+    public String initialsWithPointBetween(){
+        return firstName.substring(0, 1) + '.' + lastName.substring(0, 1);
+    }
+}
+@MetaBean
+public class Child extends Person{
+    private final String suffix="Jr";
+
+    public String getSuffix(){
+        return suffix;
+    }
+    @Override
+    public String initialsWithPointBetween(){
+        return getFirstName().substring(0, 1)+
+            '.'+suffix.substring(0, 1) + '.' +
+                getLastName().substring(0, 1);
+    }
 }
 ```
-And a `SampleMeta` class will be generated !
+`PersonMeta` and `ChildMeta` class will be generated !
+You can use them like this :
+```java
+Person woman = new Person();
+woman.setFirstName("Jane");
+
+// value defaulting inline
+Metas.defaultValue(PersonMeta.firstName, woman, "John");
+Assert.assertEquals(woman.getFirstName(), "Jane");
+Metas.defaultValue(PersonMeta.lastName, woman, "Doe");
+Assert.assertEquals(woman.getLastName(), "Doe");
+
+// Bean to map
+Map<String, ?> map = Metas.toMap(woman, PersonMeta.firstName,PersonMeta.lastName);
+Assert.assertEquals(map.get("firstName"), "Jane");
+Assert.assertEquals(map.get(PersonMeta.lastName.name()), "Doe");
+
+//Customized property
+Assert.assertEquals(woman.initialsWithPointBetween(), "J.D");
+Assert.assertEquals(PersonMeta.initials.getValue(woman), "J.D");
+
+Person man = new Person();
+man.setFirstName("John");
+man.setLastName("Smith");
+
+//Copy property from an bean to anther
+Metas.copyValue(man, woman, PersonMeta.lastName);
+Assert.assertEquals(woman.getFirstName(), "Jane");
+Assert.assertEquals(woman.getLastName(), "Smith");
+
+//Copy values and handle inheritance
+Child child = new Child();
+Metas.copyValues(man, child, PersonMeta.firstName,PersonMeta.lastName);
+Assert.assertEquals(child.getFirstName(), "John");
+Assert.assertEquals(child.getLastName(), "Smith");
+
+List<Person> familly = Arrays.asList(woman,man,child);
+
+//Collect
+Collection<String> initials = Metas.collect(familly,  PersonMeta.initials);
+Assert.assertEquals(initials, new ArrayList<>(Arrays.asList("J.S","J.S","J.J.S")));
+
+//Distinct
+Assert.assertEquals(Metas.distinct(familly, PersonMeta.initials).size(), 2);
+
+//Frequency
+Map<String, Integer> frequency = Metas.frequency(familly, PersonMeta.firstName);
+Assert.assertEquals(frequency.get("John").intValue(), 2);
+Assert.assertEquals(frequency.get("Jane").intValue(), 1);
+```
