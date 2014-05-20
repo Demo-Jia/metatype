@@ -13,7 +13,7 @@ import fr.herman.metatype.model.method.Getter;
 import fr.herman.metatype.model.method.HasGetterSetter;
 import fr.herman.metatype.model.method.Setter;
 
-public final class MetaUtils
+public final class Metas
 {
     private static final double FACTOR = 0.75;
 
@@ -32,7 +32,7 @@ public final class MetaUtils
         }
     }
 
-    private MetaUtils()
+    private Metas()
     {
 
     }
@@ -53,7 +53,7 @@ public final class MetaUtils
 
     /**
      * Collect property values in a collection
-     * @see MetaUtils#collect(Collection, Collection, Getter)
+     * @see Metas#collect(Collection, Collection, Getter)
      * @param input the collection which contains input objects
      * @param getter define the property to collect
      * @return a collection of all values collected
@@ -67,7 +67,7 @@ public final class MetaUtils
 
     /**
      * Collect all different values in a Collection (remove duplicated values)
-     * @see MetaUtils#collect(Collection, Collection, Getter)
+     * @see Metas#collect(Collection, Collection, Getter)
      * @param input the collection which contains input objects
      * @param getter define the property to collect
      * @return a collection of distinct values
@@ -79,7 +79,7 @@ public final class MetaUtils
 
     /**
      * Collect all different values in a Collection (remove duplicated values)
-     * @see MetaUtils#collect(Collection, Collection, Getter)
+     * @see Metas#collect(Collection, Collection, Getter)
      * @param input the collection which contains input objects
      * @param getter define the property to collect
      * @param estimatedSize specify the estimated size of the result
@@ -158,7 +158,7 @@ public final class MetaUtils
      * @param properties the list of properties to apply
      */
     @SafeVarargs
-    public static <O> void applyTo(O from, O to, HasGetterSetter<? super O, ?>... properties)
+    public static <O> void copyValues(O from, O to, HasGetterSetter<? super O, ?>... properties)
     {
         if (from != null && to != null && properties != null)
         {
