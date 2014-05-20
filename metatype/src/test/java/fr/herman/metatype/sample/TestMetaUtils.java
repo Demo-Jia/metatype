@@ -36,4 +36,14 @@ public class TestMetaUtils
         assertTrue(collect.contains("hello"));
         assertTrue(collect.contains("world"));
     }
+
+    @Test
+    public void testDefaultValue()
+    {
+        Sample sample = new Sample();
+        MetaUtils.defaultValue(SampleMeta.hello, sample, "world");
+        assertEquals("world", sample.getHello());
+        MetaUtils.defaultValue(SampleMeta.hello, sample, "you");
+        assertEquals("world", sample.getHello());
+    }
 }
