@@ -47,9 +47,9 @@ Configure APT plugin
   </executions>
 </plugin>
 ```
-Put `@Bean` annotation on your class (or interface)
+Put `@MetaBean` annotation on your class (or interface)
 ```java
-@Bean
+@MetaBean
 public class Sample {
   private String hello;
   public String getHello(){
