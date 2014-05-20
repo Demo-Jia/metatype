@@ -7,7 +7,7 @@ import java.util.Collection;
 import org.testng.annotations.Test;
 import fr.herman.metatype.utils.Metas;
 
-public class TestMetaUtils
+public class TestMetas
 {
     @Test
     public void testCollect()
