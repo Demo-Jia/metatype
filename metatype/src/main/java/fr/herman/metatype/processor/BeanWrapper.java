@@ -35,7 +35,6 @@ public class BeanWrapper
     private Map<String, FieldItem> buildFieldGraph()
     {
         final HashMap<String, FieldItem> result = new HashMap<String, FieldItem>();
-        // final List<? extends Element> elementInList = context.getProcessingEnvironment().getElementUtils().getAllMembers(typeElement);
         final List<ExecutableElement> methods = ElementFilter.methodsIn(typeElement.getEnclosedElements());
 
         // looping around all methods
@@ -79,7 +78,7 @@ public class BeanWrapper
     private void putSetterField(MethodWrapper methodWrapper, HashMap<String, FieldItem> result)
     {
 
-        String field = methodWrapper.getFieldName().toLowerCase();
+        String field = methodWrapper.getFieldName();
         FieldItem item = result.get(field);
         if (item != null)
         {
@@ -95,7 +94,7 @@ public class BeanWrapper
     private void putGetterField(MethodWrapper methodWrapper, HashMap<String, FieldItem> result)
     {
 
-        String field = methodWrapper.getFieldName().toLowerCase();
+        String field = methodWrapper.getFieldName();
         FieldItem item = result.get(field);
         if (item != null)
         {

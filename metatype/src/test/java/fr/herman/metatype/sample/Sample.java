@@ -2,6 +2,8 @@ package fr.herman.metatype.sample;
 
 import java.util.Collection;
 import java.util.Date;
+import fr.herman.metatype.annotation.MetaGetter;
+import fr.herman.metatype.annotation.MetaSetter;
 
 public class Sample
 {
@@ -13,6 +15,8 @@ public class Sample
     private Date         date;
 
     private Collection<Boolean> booleans;
+
+    private Object              customized;
 
     public String getHello()
     {
@@ -57,5 +61,17 @@ public class Sample
     public void setBooleans(Collection<Boolean> bools)
     {
         booleans = bools;
+    }
+
+    @MetaGetter("custom")
+    public Object getCustomized()
+    {
+        return customized;
+    }
+
+    @MetaSetter("custom")
+    public void setCustomized(Object customized)
+    {
+        this.customized = customized;
     }
 }

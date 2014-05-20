@@ -21,7 +21,7 @@ public class TestExtendedChainedGetter
         String value = ecg.to(SampleMeta.hello).getValue(child);
         AssertJUnit.assertEquals("world", value);
 
-        Getter<SampleChild, String> getter = ecg.to(SampleChildMeta.childstring);
+        Getter<SampleChild, String> getter = ecg.to(SampleChildMeta.childString);
         String childString = getter.getValue(child);
         Assert.assertNull(childString);
 

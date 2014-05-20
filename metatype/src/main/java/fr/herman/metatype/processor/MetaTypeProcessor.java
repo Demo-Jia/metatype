@@ -14,13 +14,13 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.JavaFileObject;
-import fr.herman.metatype.annotation.Bean;
+import fr.herman.metatype.annotation.MetaBean;
 import fr.herman.metatype.processor.meta.ClassMeta;
 import fr.herman.metatype.processor.meta.GetterMeta;
 import fr.herman.metatype.processor.meta.PropertyMeta;
 import fr.herman.metatype.processor.meta.SetterMeta;
 
-@SupportedAnnotationTypes({"fr.herman.metatype.annotation.Bean"})
+@SupportedAnnotationTypes({"fr.herman.metatype.annotation.MetaBean"})
 public class MetaTypeProcessor extends AbstractProcessor
 {
 
@@ -30,7 +30,7 @@ public class MetaTypeProcessor extends AbstractProcessor
         Context context = new Context(processingEnv);
         Map<TypeMirror, BeanWrapper> wrappers = new HashMap<TypeMirror, BeanWrapper>();
         Map<TypeMirror, ClassMeta> metas = new HashMap<TypeMirror, ClassMeta>();
-        for (Element element : roundEnv.getElementsAnnotatedWith(Bean.class))
+        for (Element element : roundEnv.getElementsAnnotatedWith(MetaBean.class))
         {
             TypeElement typeElement = (TypeElement) element;
             wrappers.put(element.asType(), new BeanWrapper(context, typeElement));
@@ -99,19 +99,24 @@ public class MetaTypeProcessor extends AbstractProcessor
             }
             catch (Exception e)
             {
-                try
-                {
-                    writer.close();
-                }
-                catch (Throwable t)
-                {
-
-                }
+                closeQuietly(writer);
                 e.printStackTrace();
             }
         }
 
         return false;
+    }
+
+    private static void closeQuietly(Writer writer)
+    {
+        try
+        {
+            writer.close();
+        }
+        catch (Throwable t)
+        {
+
+        }
     }
 
     private TypeMirror boxed(TypeMirror type)

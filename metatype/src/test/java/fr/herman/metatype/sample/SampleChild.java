@@ -1,8 +1,8 @@
 package fr.herman.metatype.sample;
 
-import fr.herman.metatype.annotation.Bean;
+import fr.herman.metatype.annotation.MetaBean;
 
-@Bean
+@MetaBean
 public class SampleChild extends Sample
 {
     private String[] stringArray;

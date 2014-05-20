@@ -2,11 +2,12 @@ package fr.herman.metatype.processor;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import fr.herman.metatype.annotation.MetaGetter;
+import fr.herman.metatype.annotation.MetaSetter;
 
 public class MethodWrapper
 {
@@ -21,10 +22,10 @@ public class MethodWrapper
 
     protected final Context         context;
 
-    public MethodWrapper(Context context,ExecutableElement method)
+    public MethodWrapper(Context context, ExecutableElement method)
     {
         this.method = method;
-        this.context=context;
+        this.context = context;
     }
 
     public TypeMirror firstParameterType()
@@ -76,11 +77,20 @@ public class MethodWrapper
         boolean res = false;
         if (method.getParameters().size() == 0 && method.getReturnType().getKind() != TypeKind.VOID && method.getModifiers().contains(Modifier.PUBLIC))
         {
-            Matcher getterMatcher = GETTER_PATTERN.matcher(method.getSimpleName());
-            res = getterMatcher.matches();
-            if (res)
+            MetaGetter metaGetter = method.getAnnotation(MetaGetter.class);
+            if (metaGetter != null)
             {
-                fieldName = getterMatcher.group(2);
+                res = true;
+                fieldName = metaGetter.value();
+            }
+            else
+            {
+                Matcher getterMatcher = GETTER_PATTERN.matcher(method.getSimpleName());
+                res = getterMatcher.matches();
+                if (res)
+                {
+                    fieldName = WordUtils.unCapitalize(getterMatcher.group(2));
+                }
             }
         }
         return res;
@@ -89,13 +99,22 @@ public class MethodWrapper
     public boolean isSetter()
     {
         boolean res = false;
-        if (method.getParameters().size() == 1 && method.getReturnType().getKind() == TypeKind.VOID && method.getModifiers().contains(Modifier.PUBLIC))
+        if (method.getParameters().size() == 1 && method.getModifiers().contains(Modifier.PUBLIC))
         {
-            Matcher setterMatcher = SETTER_PATTERN.matcher(method.getSimpleName());
-            res = setterMatcher.matches();
-            if (res)
+            MetaSetter metaSetter = method.getAnnotation(MetaSetter.class);
+            if (metaSetter != null)
             {
-                fieldName = setterMatcher.group(1);
+                res = true;
+                fieldName = metaSetter.value();
+            }
+            else
+            {
+                Matcher setterMatcher = SETTER_PATTERN.matcher(method.getSimpleName());
+                res = setterMatcher.matches();
+                if (res && method.getReturnType().getKind() == TypeKind.VOID)
+                {
+                    fieldName = WordUtils.unCapitalize(setterMatcher.group(1));
+                }
             }
         }
         return res;
@@ -108,25 +127,5 @@ public class MethodWrapper
             return fieldName;
         }
         return null;
-    }
-
-    public boolean hasAnnotation(String annotation)
-    {
-        boolean res = false;
-        for (AnnotationMirror annotationMirror : method.getAnnotationMirrors())
-        {
-            if (annotationMirror.getAnnotationType().toString().equals(annotation))
-            {
-                res = true;
-                break;
-            }
-        }
-        return res;
-
-    }
-
-    public boolean hasAnnotation(Class<?> annotation)
-    {
-        return hasAnnotation(annotation.getCanonicalName());
     }
 }
