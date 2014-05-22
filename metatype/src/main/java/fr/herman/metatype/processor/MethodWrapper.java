@@ -6,6 +6,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import fr.herman.metatype.annotation.MetaIgnore;
 import fr.herman.metatype.annotation.MetaGetter;
 import fr.herman.metatype.annotation.MetaSetter;
 
@@ -75,7 +76,7 @@ public class MethodWrapper
     public boolean isGetter()
     {
         boolean res = false;
-        if (method.getParameters().size() == 0 && method.getReturnType().getKind() != TypeKind.VOID && method.getModifiers().contains(Modifier.PUBLIC))
+        if (method.getParameters().size() == 0 && method.getReturnType().getKind() != TypeKind.VOID && method.getModifiers().contains(Modifier.PUBLIC) && method.getAnnotation(MetaIgnore.class) == null)
         {
             MetaGetter metaGetter = method.getAnnotation(MetaGetter.class);
             if (metaGetter != null)
@@ -99,7 +100,7 @@ public class MethodWrapper
     public boolean isSetter()
     {
         boolean res = false;
-        if (method.getParameters().size() == 1 && method.getModifiers().contains(Modifier.PUBLIC))
+        if (method.getParameters().size() == 1 && method.getModifiers().contains(Modifier.PUBLIC) && method.getAnnotation(MetaIgnore.class) == null)
         {
             MetaSetter metaSetter = method.getAnnotation(MetaSetter.class);
             if (metaSetter != null)
