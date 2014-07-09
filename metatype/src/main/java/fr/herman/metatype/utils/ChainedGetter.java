@@ -23,12 +23,12 @@ public class ChainedGetter<FROM, CURRENT, TO> implements Getter<FROM, TO>
         return new ChainedGetter<O, O, V>().add(getter);
     }
 
-    public <X> ChainedGetter<FROM, TO, X> to(Getter<TO, X> getter)
+    public <X> ChainedGetter<FROM, TO, X> to(Getter<? super TO, X> getter)
     {
         return new ChainedGetter<FROM, TO, X>(getters).add(getter);
     }
 
-    private ChainedGetter<FROM, CURRENT, TO> add(Getter<CURRENT, TO> getter)
+    private ChainedGetter<FROM, CURRENT, TO> add(Getter<? super CURRENT, TO> getter)
     {
         getters.add(getter);
         return this;
