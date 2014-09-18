@@ -1,7 +1,13 @@
 package fr.herman.metatype.processor;
 
+import static com.squareup.javawriter.JavaWriter.rawType;
+import static com.squareup.javawriter.JavaWriter.stringLiteral;
 import static java.lang.String.format;
+import static java.util.EnumSet.of;
+import static javax.lang.model.element.Modifier.FINAL;
+import static javax.lang.model.element.Modifier.PUBLIC;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -14,7 +20,15 @@ import javax.lang.model.type.TypeMirror;
 import lombok.Data;
 import com.squareup.javawriter.JavaWriter;
 import fr.herman.metatype.model.MetaClass;
+import fr.herman.metatype.model.MetaClassNode;
+import fr.herman.metatype.model.MetaClassTemplate;
 import fr.herman.metatype.model.MetaProperty;
+import fr.herman.metatype.model.MetaPropertyGetter;
+import fr.herman.metatype.model.MetaPropertyGetterSetter;
+import fr.herman.metatype.model.MetaPropertyGetterSetterTemplate;
+import fr.herman.metatype.model.MetaPropertyGetterTemplate;
+import fr.herman.metatype.model.MetaPropertySetter;
+import fr.herman.metatype.model.MetaPropertySetterTemplate;
 import fr.herman.metatype.model.method.Getter;
 import fr.herman.metatype.model.method.HasGetter;
 import fr.herman.metatype.model.method.HasGetterSetter;
@@ -28,13 +42,6 @@ import fr.herman.metatype.processor.meta.SetterMeta;
 @Data
 public class SourceGenerator
 {
-    private static final String PROPERTIES = "PROPERTIES";
-
-    private static interface Types
-    {
-        String STRING = String.class.getCanonicalName();
-    }
-
     private final Context       context;
     private final JavaWriter2   writer;
     private final ClassMeta     classMeta;
@@ -102,102 +109,77 @@ public class SourceGenerator
 
     private void writeClass() throws IOException
     {
-        String superType = classMeta.getSuperType() != null ? classMeta.getSuperType().getCanonicalName() : null;
-        writer.beginDeclaredClass(classMeta.getCanonicalName(), superType, MetaClass.class.getCanonicalName());
+        String superTypeFormat = "%s<ROOT,CURRENT,VALUE>";
+        String superType = classMeta.getSuperType() != null ? classMeta.getSuperType().getCanonicalName() : MetaClassTemplate.class.getCanonicalName();
+
+        String metaClassName = format("%s<ROOT,CURRENT,VALUE extends %s>", classMeta.getCanonicalName(), classMeta.getOriginalType());
+        writer.beginDeclaredClass(metaClassName, format(superTypeFormat, superType));
+        writer.beginConstructor(of(PUBLIC), JavaWriter.type(MetaClassNode.class, "ROOT", "CURRENT", "VALUE"), "node");
+        writer.emitStatement("super(node)");
+        writer.endConstructor();
+        String metaClassNameConstant = MessageFormat.format("{0}<{1},{1},{1}>", classMeta.getSimpleName(), classMeta.getOriginalType());
+        writer.emitConstant(metaClassNameConstant, "$", PUBLIC, format("new %s(fr.herman.metatype.model.MetaClassNode.root(%s.class))", metaClassNameConstant, classMeta.getOriginalType()));
         for (PropertyMeta property : classMeta.getProperties())
         {
             writeProperty(property);
         }
-        String superPropertiesType = "? super " + writer.compressType(classMeta.getOriginalType().toString());
-        String propertiesType = JavaWriter.type(MetaProperty.class, superPropertiesType, "?");
-
-        String propertiesCollectionType = JavaWriter.type(Collection.class, propertiesType);
-        writer.emitField(propertiesCollectionType, PROPERTIES, EnumSet.of(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL));
-        writer.beginInitializer(true);
-        writer.emitStatement("%s c = new LinkedList<%s>()", writer.compressType(propertiesCollectionType), writer.compressType(propertiesType));
-        if (classMeta.getSuperType() != null)
-        {
-            writer.beginControlFlow("for(MetaProperty<? super %s,?> mp : %s.PROPERTIES)", writer.compressType(classMeta.getSuperType().getOriginalType().toString()), writer.compressType(superType));
-            writer.emitStatement("c.add(mp)");
-            writer.endControlFlow();
-        }
-        for (PropertyMeta property : classMeta.getProperties())
-        {
-            writer.emitStatement("c.add(%s)", property.getName());
-        }
-        writer.emitStatement("PROPERTIES=Collections.unmodifiableCollection(c)");
-        writer.endInitializer();
-        // writer.emitCustomGetter(JavaWriter.type(Collection.class, MetaProperty.class.getCanonicalName()), "PROPERTIES", "properties");
-        String compressedOriginalType = writer.compressType(raw(classMeta.getOriginalType()));
-        writer.emitConstant(JavaWriter.type(Class.class, classMeta.getOriginalType().toString()), "TYPE", Modifier.PUBLIC, format("%s.class", compressedOriginalType));
-        if (classMeta.getSuperType() != null)
-        {
-            writer.emitAnnotation(Override.class);
-        }
-        writer.emitCustomGetter("Class<?>", "TYPE", "type");
         writer.endClass();
     }
 
-    private void writeProperty(PropertyMeta property) throws IOException
+    protected void writeProperty(PropertyMeta property) throws IOException
     {
         boolean hasGetter = property.getGetter() != null;
         boolean hasSetter = property.getSetter() != null;
 
-        String metaType = WordUtils.capitalize(property.getName()) + "Property";
-        List<String> interfaces = new ArrayList<String>();
+        String name = property.getName();
         String originalType = classMeta.getOriginalType().toString();
+        String metaType = format("%sAcessor", WordUtils.capitalize(name));
+        List<String> interfaces = new ArrayList<String>();
         String propertyType = property.getType().toString();
-        interfaces.add(JavaWriter.type(MetaProperty.class, originalType, propertyType));
-        if (hasGetter && hasSetter)
-        {
-            interfaces.add(JavaWriter.type(HasGetterSetter.class, originalType, propertyType));
-            interfaces.add(JavaWriter.type(Getter.class, originalType, propertyType));
-            interfaces.add(JavaWriter.type(Setter.class, originalType, propertyType));
-        }
-        else if (hasGetter)
-        {
-            interfaces.add(JavaWriter.type(HasGetter.class, originalType, propertyType));
-            interfaces.add(JavaWriter.type(Getter.class, originalType, propertyType));
-        }
-        else if (hasSetter)
-        {
-            interfaces.add(JavaWriter.type(HasSetter.class, originalType, propertyType));
-            interfaces.add(JavaWriter.type(Setter.class, originalType, propertyType));
-        }
-
-        writer.beginClass(metaType, EnumSet.of(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL), null, interfaces.toArray(new String[interfaces.size()]));
-        writer.emitConstant(Types.STRING, "NAME", Modifier.PRIVATE, JavaWriter.stringLiteral(property.getName()));
-        writer.emitCustomGetter(Types.STRING, "NAME", "name");
         if (hasGetter)
         {
-            writeGetter(property.getGetter());
+            interfaces.add(JavaWriter.type(Getter.class, "TYPE", propertyType));
         }
         if (hasSetter)
         {
-            writeSetter(property.getSetter());
+            interfaces.add(JavaWriter.type(Setter.class, "TYPE", propertyType));
         }
-        writer.emitSimpleMethod("Class<?>", "type", format("return %s.class", writer.compressType(raw(property.getType()))));
-        writer.emitCustomGetter(JavaWriter.type(Class.class, originalType), classMeta.getSimpleName() + ".TYPE", "modelType");
+
+        writer.beginClass(format("%s<TYPE extends %s>", metaType, originalType), EnumSet.of(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL), null, interfaces.toArray(new String[interfaces.size()]));
+        if (hasGetter)
+        {
+            GetterMeta getter = property.getGetter();
+            writer.beginMethod(getter.getValueType().toString(), "getValue", EnumSet.of(Modifier.PUBLIC), "TYPE", "o");
+            writer.emitStatement("return o.%s()", getter.getDelegateMethodName());
+            writer.endMethod();
+        }
+        if (hasSetter)
+        {
+            SetterMeta setter = property.getSetter();
+            writer.beginMethod("void", "setValue", EnumSet.of(Modifier.PUBLIC), "TYPE", "o", setter.getValueType().toString(), "v");
+            writer.emitStatement("o.%s(v)", setter.getDelegateMethodName());
+            writer.endMethod();
+        }
         writer.endClass();
-        writer.emitConstant(metaType, property.getName(), Modifier.PUBLIC, format("new %s()", writer.compressType(metaType)));
-    }
+        String accessor = name.toUpperCase() + "ACESSOR";
+        writer.emitConstant(metaType, accessor, Modifier.PRIVATE, format("new %s()", writer.compressType(metaType)));
+        String propertyTypeClass = !propertyType.contains("<") ? propertyType : format("(Class<%s>)(Class) %s", propertyType, rawType(propertyType));
 
-    private void writeGetter(GetterMeta getter) throws IOException
-    {
-        writer.beginMethod(getter.getValueType().toString(), "getValue", EnumSet.of(Modifier.PUBLIC), getter.getObjectType().toString(), "o");
-        writer.emitStatement("return o.%s()", getter.getDelegateMethodName());
-        writer.endMethod();
-        String type = JavaWriter.type(Getter.class, getter.getObjectType().toString(), getter.getValueType().toString());
-        writer.emitCustomGetter(type, "this", "getter");
-    }
-
-    private void writeSetter(SetterMeta setter) throws IOException
-    {
-        writer.beginMethod("void", "setValue", EnumSet.of(Modifier.PUBLIC), setter.getObjectType().toString(), "o", setter.getValueType().toString(), "v");
-        writer.emitStatement("o.%s(v)", setter.getDelegateMethodName());
-        writer.endMethod();
-        String type = JavaWriter.type(Setter.class, setter.getObjectType().toString(), setter.getValueType().toString());
-        writer.emitCustomGetter(type, "this", "setter");
+        if (hasGetter && hasSetter)
+        {
+            writer.emitField(JavaWriter.type(MetaPropertyGetterSetter.class, "ROOT", "VALUE", propertyType), name, of(PUBLIC, FINAL),
+                format("new %s<ROOT,VALUE,%s>(this,%s.class,%s,%s)", MetaPropertyGetterSetterTemplate.class.getCanonicalName(), propertyType, propertyTypeClass, stringLiteral(name), accessor));
+        }
+        else if (hasGetter)
+        {
+            writer.emitField(JavaWriter.type(MetaPropertyGetter.class, "ROOT", "VALUE", propertyType), name, of(PUBLIC, FINAL),
+                format("new %s<ROOT,VALUE,%s>(this,%s.class,%s,%s)", MetaPropertyGetterTemplate.class.getCanonicalName(), propertyType, propertyTypeClass, stringLiteral(name), accessor));
+        }
+        else if (hasSetter)
+        {
+            writer.emitField(JavaWriter.type(MetaPropertySetter.class, "ROOT", "VALUE", propertyType), name, of(PUBLIC, FINAL),
+                format("new %s<ROOT,VALUE,%s>(this,%s.class,%s,%s)", MetaPropertySetterTemplate.class.getCanonicalName(), propertyType, propertyTypeClass, stringLiteral(name), accessor));
+        }
     }
 
 }

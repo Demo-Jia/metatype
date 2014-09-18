@@ -9,14 +9,26 @@ import fr.herman.metatype.utils.ChainedGetter;
 public class TestChainedGetter
 {
     @Test
+    public void testOldFashion()
+    {
+        Sample sample = new Sample();
+        sample.setHello("world");
+        SampleChild child = new SampleChild();
+        child.setSample(sample);
+        String value = ChainedGetter.from(SampleChildMeta.$.sample).to(SampleMeta.$.hello).getValue(child);
+        assertEquals("world", value);
+    }
+
+    @Test
     public void test()
     {
         Sample sample = new Sample();
         sample.setHello("world");
         SampleChild child = new SampleChild();
         child.setSample(sample);
-        String value = ChainedGetter.from(SampleChildMeta.sample).to(SampleMeta.hello).getValue(child);
-        assertEquals("world", value);
+        // String value = SampleChildMeta.$.sample.hello.getValue(child);
+        // assertEquals("world", value);
+        Assert.assertTrue(false, "Not implemented yet!");
     }
 
     @Test
@@ -24,9 +36,9 @@ public class TestChainedGetter
     {
         SampleChild child = new SampleChild();
         Assert.assertNull(child.getSample());
-        ChainedGetter<SampleChild, SampleChild, Sample> getter = ChainedGetter.from(SampleChildMeta.sample);
+        ChainedGetter<SampleChild, SampleChild, Sample> getter = ChainedGetter.from(SampleChildMeta.$.sample);
         Assert.assertNull(getter.getValue(child));
-        Getter<SampleChild, String> getter2 = getter.to(SampleMeta.hello);
+        Getter<SampleChild, String> getter2 = getter.to(SampleMeta.$.hello);
         Assert.assertNull(getter2.getValue(child));
     }
 }

@@ -13,15 +13,15 @@ public class TestExtendedChainedGetter
     public void test()
     {
         SampleChild child = new SampleChild();
-        ExtendedChainedGetter<SampleChild, SampleChild, Sample> ecg = ExtendedChainedGetter.from(SampleChildMeta.sample);
+        ExtendedChainedGetter<SampleChild, SampleChild, Sample> ecg = ExtendedChainedGetter.from(SampleChildMeta.$.sample);
 
         Sample sample = new Sample();
         sample.setHello("world");
         child.setSample(sample);
-        String value = ecg.to(SampleMeta.hello).getValue(child);
+        String value = ecg.to(SampleMeta.$.hello).getValue(child);
         AssertJUnit.assertEquals("world", value);
 
-        Getter<SampleChild, String> getter = ecg.to(SampleChildMeta.childString);
+        Getter<SampleChild, String> getter = ecg.to(SampleChildMeta.$.childString);
         String childString = getter.getValue(child);
         Assert.assertNull(childString);
 

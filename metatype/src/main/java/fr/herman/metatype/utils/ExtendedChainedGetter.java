@@ -48,9 +48,9 @@ public class ExtendedChainedGetter<FROM, CURRENT, TO> implements Getter<FROM, TO
         return new ExtendedChainedGetter<O, O, V>().add(getter);
     }
 
-    public <X, E extends TO, P extends HasGetter<E, X> & MetaProperty<E, X>> ExtendedChainedGetter<FROM, TO, X> to(P property)
+    public <X, E extends TO, P extends HasGetter<E, X> & MetaProperty<E, ?, X>> ExtendedChainedGetter<FROM, TO, X> to(P property)
     {
-        return to(property.getter(), property.modelType());
+        return to(property.getter(), property.rootType());
     }
 
     public <E extends TO, X> ExtendedChainedGetter<FROM, TO, X> to(Getter<E, X> getter, Class<E> clazz)

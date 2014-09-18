@@ -130,7 +130,7 @@ public final class Metas
      * @return a map of property name/value
      */
     @SafeVarargs
-    public static <O, P extends Getter<? super O, ?> & MetaProperty<? super O, ?>> Map<String, ?> toMap(O object, P... metas)
+    public static <O, P extends Getter<? super O, ?> & MetaProperty<? super O, ?, ?>> Map<String, ?> toMap(O object, P... metas)
     {
         return toMap(object, Arrays.asList(metas));
     }
@@ -141,7 +141,7 @@ public final class Metas
      * @param metas the collection of field to map
      * @return a map of property name/value
      */
-    public static <O, P extends Getter<? super O, ?> & MetaProperty<? super O, ?>> Map<String, ?> toMap(O object, Collection<P> metas)
+    public static <O, P extends Getter<? super O, ?> & MetaProperty<? super O, ?, ?>> Map<String, ?> toMap(O object, Collection<P> metas)
     {
         Map<String, Object> map = new HashMap<>(metas.size());
         for (P meta : metas)

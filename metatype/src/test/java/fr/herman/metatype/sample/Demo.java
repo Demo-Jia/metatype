@@ -37,6 +37,7 @@ public class Demo
             return firstName.substring(0, 1) + '.' + lastName.substring(0, 1);
         }
     }
+
     @MetaBean
     public static class Child extends Person{
         private final String suffix="Jr";
@@ -58,46 +59,46 @@ public class Demo
         woman.setFirstName("Jane");
 
         // value defaulting inline
-        Metas.defaultValue(PersonMeta.firstName, woman, "John");
+        Metas.defaultValue(PersonMeta.$.firstName, woman, "John");
         assertEquals(woman.getFirstName(), "Jane");
-        Metas.defaultValue(PersonMeta.lastName, woman, "Doe");
+        Metas.defaultValue(PersonMeta.$.lastName, woman, "Doe");
         assertEquals(woman.getLastName(), "Doe");
 
         // Bean to map
-        Map<String, ?> map = Metas.toMap(woman, PersonMeta.firstName,PersonMeta.lastName);
+        Map<String, ?> map = Metas.toMap(woman, PersonMeta.$.firstName,PersonMeta.$.lastName);
         assertEquals(map.get("firstName"), "Jane");
-        assertEquals(map.get(PersonMeta.lastName.name()), "Doe");
+        assertEquals(map.get(PersonMeta.$.lastName.name()), "Doe");
 
         //Customized property
         assertEquals(woman.initialsWithPointBetween(), "J.D");
-        assertEquals(PersonMeta.initials.getValue(woman), "J.D");
+        assertEquals(PersonMeta.$.initials.getValue(woman), "J.D");
 
         Person man = new Person();
         man.setFirstName("John");
         man.setLastName("Smith");
 
         //Copy property from an bean to anther
-        Metas.copyValue(man, woman, PersonMeta.lastName);
+        Metas.copyValue(man, woman, PersonMeta.$.lastName);
         assertEquals(woman.getFirstName(), "Jane");
         assertEquals(woman.getLastName(), "Smith");
 
         //Copy values and handle inheritance
         Child child = new Child();
-        Metas.copyValues(man, child, PersonMeta.firstName,PersonMeta.lastName);
+        Metas.copyValues(man, child, PersonMeta.$.firstName,PersonMeta.$.lastName);
         assertEquals(child.getFirstName(), "John");
         assertEquals(child.getLastName(), "Smith");
 
         List<Person> familly = Arrays.asList(woman,man,child);
 
         //Collect
-        Collection<String> initials = Metas.collect(familly,  PersonMeta.initials);
+        Collection<String> initials = Metas.collect(familly,  PersonMeta.$.initials);
         assertEquals(initials, new ArrayList<>(Arrays.asList("J.S","J.S","J.J.S")));
 
         //Distinct
-        assertEquals(Metas.distinct(familly, PersonMeta.initials).size(), 2);
+        assertEquals(Metas.distinct(familly, PersonMeta.$.initials).size(), 2);
 
         //Frequency
-        Map<String, Integer> frequency = Metas.frequency(familly, PersonMeta.firstName);
+        Map<String, Integer> frequency = Metas.frequency(familly, PersonMeta.$.firstName);
         assertEquals(frequency.get("John").intValue(), 2);
         assertEquals(frequency.get("Jane").intValue(), 1);
     }
