@@ -1,9 +1,12 @@
 package fr.herman.metatype.processor;
 
+import java.util.Map;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
+import fr.herman.metatype.processor.meta.ClassMeta;
 
 public class Context
 {
@@ -12,6 +15,8 @@ public class Context
 
     // Handle method stack to build all mapping method not already built
     private String                      newParams;
+
+    private Map<TypeMirror, ClassMeta>  metas;
 
     public Context(ProcessingEnvironment processingEnvironment)
     {
@@ -56,5 +61,20 @@ public class Context
     public ProcessingEnvironment getProcessingEnvironment()
     {
         return processingEnv;
+    }
+
+    public void setMetas(Map<TypeMirror, ClassMeta> metas)
+    {
+        this.metas = metas;
+    }
+
+    public boolean hasMeta(TypeMirror type)
+    {
+        return metas.containsKey(type);
+    }
+
+    public ClassMeta getMeta(TypeMirror type)
+    {
+        return metas.get(type);
     }
 }

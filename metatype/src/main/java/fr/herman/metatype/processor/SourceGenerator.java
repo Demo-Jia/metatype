@@ -2,17 +2,17 @@ package fr.herman.metatype.processor;
 
 import static com.squareup.javawriter.JavaWriter.rawType;
 import static com.squareup.javawriter.JavaWriter.stringLiteral;
+import static com.squareup.javawriter.JavaWriter.type;
 import static java.lang.String.format;
 import static java.util.EnumSet.of;
 import static javax.lang.model.element.Modifier.FINAL;
+import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
-import java.util.LinkedList;
 import java.util.List;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
@@ -21,6 +21,7 @@ import lombok.Data;
 import com.squareup.javawriter.JavaWriter;
 import fr.herman.metatype.model.MetaClass;
 import fr.herman.metatype.model.MetaClassNode;
+import fr.herman.metatype.model.MetaClassNode.PropertySetterNode;
 import fr.herman.metatype.model.MetaClassTemplate;
 import fr.herman.metatype.model.MetaProperty;
 import fr.herman.metatype.model.MetaPropertyGetter;
@@ -30,8 +31,6 @@ import fr.herman.metatype.model.MetaPropertyGetterTemplate;
 import fr.herman.metatype.model.MetaPropertySetter;
 import fr.herman.metatype.model.MetaPropertySetterTemplate;
 import fr.herman.metatype.model.method.Getter;
-import fr.herman.metatype.model.method.HasGetter;
-import fr.herman.metatype.model.method.HasGetterSetter;
 import fr.herman.metatype.model.method.HasSetter;
 import fr.herman.metatype.model.method.Setter;
 import fr.herman.metatype.processor.meta.ClassMeta;
@@ -73,19 +72,19 @@ public class SourceGenerator
             writer.emitImports(rawForImport(property.getType()));
             if (property.getGetter() != null && property.getGetter() != null)
             {
-                writer.emitImports(HasGetterSetter.class, Getter.class, Setter.class);
+                writer.emitImports(Getter.class, Setter.class);
             }
             else if (property.getGetter() != null)
             {
-                writer.emitImports(HasGetter.class, Getter.class);
+                writer.emitImports(Getter.class);
             }
             else if (property.getSetter() != null)
             {
-                writer.emitImports(HasSetter.class, Setter.class);
+                writer.emitImports(Setter.class);
             }
 
         }
-        writer.emitImports(MetaClass.class, MetaProperty.class, Collection.class, Collections.class, LinkedList.class);
+        writer.emitImports(MetaClass.class, MetaProperty.class, Collection.class);
     }
 
     private void writePackage() throws IOException
@@ -117,12 +116,31 @@ public class SourceGenerator
         writer.beginConstructor(of(PUBLIC), JavaWriter.type(MetaClassNode.class, "ROOT", "CURRENT", "VALUE"), "node");
         writer.emitStatement("super(node)");
         writer.endConstructor();
-        String metaClassNameConstant = MessageFormat.format("{0}<{1},{1},{1}>", classMeta.getSimpleName(), classMeta.getOriginalType());
-        writer.emitConstant(metaClassNameConstant, "$", PUBLIC, format("new %s(fr.herman.metatype.model.MetaClassNode.root(%s.class))", metaClassNameConstant, classMeta.getOriginalType()));
         for (PropertyMeta property : classMeta.getProperties())
         {
             writeProperty(property);
         }
+
+        writer.beginClass(format("%sSetter<ROOT,CURRENT,VALUE extends %s>", classMeta.getCanonicalName(), classMeta.getOriginalType()), EnumSet.of(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL),
+            format("%s<ROOT,CURRENT,VALUE>", classMeta.getCanonicalName(), classMeta.getOriginalType()), type(Setter.class, "ROOT", "VALUE"), type(HasSetter.class, "ROOT", "VALUE"));
+        writer.emitField(type(PropertySetterNode.class, "ROOT", "CURRENT", "VALUE"), "node", of(PRIVATE, FINAL));
+
+        writer.beginConstructor(of(PUBLIC), JavaWriter.type(PropertySetterNode.class, "ROOT", "CURRENT", "VALUE"), "node");
+        writer.emitStatement("super(node)");
+        writer.emitStatement("this.node=node");
+        writer.endConstructor();
+
+        writer.beginMethod("void", "setValue", EnumSet.of(Modifier.PUBLIC), "ROOT", "o", "VALUE", "v");
+        writer.emitStatement("node.setValue(o,v)");
+        writer.endMethod();
+        writer.beginMethod(type(Setter.class, "ROOT", "VALUE"), "setter", EnumSet.of(Modifier.PUBLIC));
+        writer.emitStatement("return this");
+        writer.endMethod();
+
+        writer.endClass();
+
+        String metaClassNameConstant = MessageFormat.format("{0}<{1},{1},{1}>", classMeta.getSimpleName(), classMeta.getOriginalType());
+        writer.emitConstant(metaClassNameConstant, "$", PUBLIC, format("new %s(fr.herman.metatype.model.MetaClassNode.root(%s.class))", metaClassNameConstant, classMeta.getOriginalType()));
         writer.endClass();
     }
 
@@ -167,13 +185,35 @@ public class SourceGenerator
 
         if (hasGetter && hasSetter)
         {
+            if (context.hasMeta(property.getType()))
+            {
+                ClassMeta meta = context.getMeta(property.getType());
+                writer.emitField(
+                    format("%s.%sSetter<ROOT,VALUE,%s>", rawType(meta.getCanonicalName()), meta.getSimpleName(), propertyType),
+                    name,
+                    of(PUBLIC, FINAL),
+                    format("new %s.%sSetter<ROOT,VALUE,%s>(fr.herman.metatype.model.MetaClassNode.property(this,%s.class,%s,%s,%s))", rawType(meta.getCanonicalName()), meta.getSimpleName(), propertyType, propertyTypeClass,
+                        stringLiteral(name), accessor, accessor));
+            }
+            else
+            {
             writer.emitField(JavaWriter.type(MetaPropertyGetterSetter.class, "ROOT", "VALUE", propertyType), name, of(PUBLIC, FINAL),
                 format("new %s<ROOT,VALUE,%s>(this,%s.class,%s,%s)", MetaPropertyGetterSetterTemplate.class.getCanonicalName(), propertyType, propertyTypeClass, stringLiteral(name), accessor));
+            }
         }
         else if (hasGetter)
         {
+            if (context.hasMeta(property.getType()))
+            {
+                ClassMeta meta = context.getMeta(property.getType());
+                writer.emitField(format("%s<ROOT,VALUE,%s>", rawType(meta.getCanonicalName()), propertyType), name, of(PUBLIC, FINAL),
+                    format("new %s<ROOT,VALUE,%s>(fr.herman.metatype.model.MetaClassNode.property(this,%s.class,%s,%s))", rawType(meta.getCanonicalName()), propertyType, propertyTypeClass, stringLiteral(name), accessor));
+            }
+            else
+            {
             writer.emitField(JavaWriter.type(MetaPropertyGetter.class, "ROOT", "VALUE", propertyType), name, of(PUBLIC, FINAL),
                 format("new %s<ROOT,VALUE,%s>(this,%s.class,%s,%s)", MetaPropertyGetterTemplate.class.getCanonicalName(), propertyType, propertyTypeClass, stringLiteral(name), accessor));
+            }
         }
         else if (hasSetter)
         {

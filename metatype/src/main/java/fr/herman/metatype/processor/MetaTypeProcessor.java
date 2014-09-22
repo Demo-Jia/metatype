@@ -85,6 +85,7 @@ public class MetaTypeProcessor extends AbstractProcessor
             }
             classMeta.setProperties(properties);
         }
+        context.setMetas(metas);
         for (ClassMeta meta : metas.values())
         {
             Writer writer = null;

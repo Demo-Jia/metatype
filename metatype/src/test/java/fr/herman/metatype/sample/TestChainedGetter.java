@@ -26,13 +26,21 @@ public class TestChainedGetter
         sample.setHello("world");
         SampleChild child = new SampleChild();
         child.setSample(sample);
-        // String value = SampleChildMeta.$.sample.hello.getValue(child);
-        // assertEquals("world", value);
-        Assert.assertTrue(false, "Not implemented yet!");
+        String value = SampleChildMeta.$.sample.hello.getValue(child);
+        assertEquals("world", value);
     }
 
     @Test
     public void testNull()
+    {
+        SampleChild child = new SampleChild();
+        Assert.assertNull(child.getSample());
+        Assert.assertNull(SampleChildMeta.$.sample.getValue(child));
+        Assert.assertNull(SampleChildMeta.$.sample.hello.getValue(child));
+    }
+
+    @Test
+    public void testNullOldFashion()
     {
         SampleChild child = new SampleChild();
         Assert.assertNull(child.getSample());
