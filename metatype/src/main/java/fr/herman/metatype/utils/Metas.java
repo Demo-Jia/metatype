@@ -19,7 +19,12 @@ public final class Metas
 
     private static class Counter
     {
-        private int i = 0;
+        public Counter(int start)
+        {
+            i = start;
+        }
+
+        private int i;
 
         public void add()
         {
@@ -111,7 +116,7 @@ public final class Metas
             }
             else
             {
-                frequency.put(value, new Counter());
+                frequency.put(value, new Counter(1));
             }
         }
         Map<T, Integer> output = new HashMap<T, Integer>(frequency.size());

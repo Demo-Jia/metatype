@@ -2,6 +2,7 @@ package fr.herman.metatype.model;
 
 import fr.herman.metatype.model.method.Getter;
 import fr.herman.metatype.model.method.Setter;
+import fr.herman.metatype.utils.Getters;
 
 public abstract class MetaClassNode<ROOT, CURRENT, VALUE> implements GetterNode<ROOT, CURRENT, VALUE>
 {
@@ -85,7 +86,7 @@ public abstract class MetaClassNode<ROOT, CURRENT, VALUE> implements GetterNode<
         @Override
         public VALUE getValue(ROOT o)
         {
-            return getter.getValue(parent.getValue(o));
+            return Getters.get(parent, getter, o);
         }
     }
 
