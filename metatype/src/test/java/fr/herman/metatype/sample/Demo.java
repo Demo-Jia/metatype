@@ -137,7 +137,7 @@ public class Demo
 
         //Batch set
         Metas.apply(PersonMeta.$.address, familly, address);
-        Metas.apply(PersonMeta.$.address.street, familly, asList("","",""));
+        Metas.apply(PersonMeta.$.address.street, familly, asList("Provence","La Fayette","Victoire"));
 
         //Fluent
         assertEquals(PersonMeta.$.address.city.getValue(man),"Paris");
