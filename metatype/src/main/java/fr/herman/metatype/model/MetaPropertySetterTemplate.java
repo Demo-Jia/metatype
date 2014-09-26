@@ -10,12 +10,13 @@ public class MetaPropertySetterTemplate<ROOT, CURRENT, VALUE> implements MetaPro
     private final String                      name;
     private final Setter<CURRENT, VALUE>      setter;
 
-    public MetaPropertySetterTemplate(MetaClass<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Setter<CURRENT, VALUE> setter)
+    public MetaPropertySetterTemplate(MetaClassTemplate<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Setter<CURRENT, VALUE> setter)
     {
         this.parent = parent;
         this.type = type;
         this.name = name;
         this.setter = setter;
+        parent.addProperty(this);
     }
 
     @Override
@@ -52,6 +53,18 @@ public class MetaPropertySetterTemplate<ROOT, CURRENT, VALUE> implements MetaPro
     public void setValue(ROOT object, VALUE value)
     {
         setter.setValue(parent.getValue(object), value);
+    }
+
+    @Override
+    public boolean hasGetter()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean hasSetter()
+    {
+        return true;
     }
 
 }

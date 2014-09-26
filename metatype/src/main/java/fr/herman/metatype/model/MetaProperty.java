@@ -5,5 +5,8 @@ public interface MetaProperty<ROOT, CURRENT, VALUE> extends Node<ROOT, CURRENT, 
 {
     Class<CURRENT> modelType();
 
+    boolean hasGetter();
+
+    boolean hasSetter();
 
 }

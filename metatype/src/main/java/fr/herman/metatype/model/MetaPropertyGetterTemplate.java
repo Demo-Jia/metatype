@@ -9,12 +9,13 @@ public class MetaPropertyGetterTemplate<ROOT, CURRENT, VALUE> implements MetaPro
     private final String                      name;
     private final Getter<CURRENT, VALUE>      getter;
 
-    public MetaPropertyGetterTemplate(MetaClass<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Getter<CURRENT, VALUE> getter)
+    public MetaPropertyGetterTemplate(MetaClassTemplate<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Getter<CURRENT, VALUE> getter)
     {
         this.parent = parent;
         this.type = type;
         this.name = name;
         this.getter = getter;
+        parent.addProperty(this);
     }
 
     @Override
@@ -51,6 +52,18 @@ public class MetaPropertyGetterTemplate<ROOT, CURRENT, VALUE> implements MetaPro
     public String name()
     {
         return name;
+    }
+
+    @Override
+    public boolean hasGetter()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean hasSetter()
+    {
+        return false;
     }
 
 }

@@ -33,6 +33,20 @@ public abstract class MetaClassNode<ROOT, CURRENT, VALUE> implements GetterNode<
         return type;
     }
 
+    public abstract Class<CURRENT> modelType();
+
+    abstract void addProperty(MetaProperty<ROOT, CURRENT, VALUE> property);
+
+    public boolean hasGetter()
+    {
+        return true;
+    }
+
+    public boolean hasSetter()
+    {
+        return false;
+    }
+
     private static class RootNode<CLASS> extends MetaClassNode<CLASS, CLASS, CLASS>
     {
 
@@ -53,6 +67,17 @@ public abstract class MetaClassNode<ROOT, CURRENT, VALUE> implements GetterNode<
         {
             return o;
         }
+
+        @Override
+        public Class<CLASS> modelType()
+        {
+            return type;
+        }
+
+        @Override
+        void addProperty(MetaProperty<CLASS, CLASS, CLASS> property)
+        {
+        }
     }
 
     public static final <CLASS> RootNode<CLASS> root(Class<CLASS> type, String name)
@@ -67,10 +92,10 @@ public abstract class MetaClassNode<ROOT, CURRENT, VALUE> implements GetterNode<
 
     public static class PropertyNode<ROOT, CURRENT, VALUE> extends MetaClassNode<ROOT, CURRENT, VALUE>
     {
-        protected final GetterNode<ROOT, ?, CURRENT> parent;
+        protected final MetaClassTemplate<ROOT, ?, CURRENT> parent;
         private final Getter<CURRENT, VALUE>       getter;
 
-        public PropertyNode(GetterNode<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Getter<CURRENT, VALUE> getter)
+        public PropertyNode(MetaClassTemplate<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Getter<CURRENT, VALUE> getter)
         {
             super(type, name);
             this.parent = parent;
@@ -88,13 +113,25 @@ public abstract class MetaClassNode<ROOT, CURRENT, VALUE> implements GetterNode<
         {
             return Getters.get(parent, getter, o);
         }
+
+        @Override
+        public Class<CURRENT> modelType()
+        {
+            return parent.type();
+        }
+
+        @Override
+        void addProperty(MetaProperty<ROOT, CURRENT, VALUE> property)
+        {
+            parent.addProperty(property);
+        }
     }
 
     public static class PropertySetterNode<ROOT, CURRENT, VALUE> extends PropertyNode<ROOT, CURRENT, VALUE> implements Setter<ROOT, VALUE>
     {
         protected final Setter<CURRENT, VALUE> setter;
 
-        public PropertySetterNode(GetterNode<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Getter<CURRENT, VALUE> getter, Setter<CURRENT, VALUE> setter)
+        public PropertySetterNode(MetaClassTemplate<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Getter<CURRENT, VALUE> getter, Setter<CURRENT, VALUE> setter)
         {
             super(parent, type, name, getter);
             this.setter = setter;
@@ -106,14 +143,19 @@ public abstract class MetaClassNode<ROOT, CURRENT, VALUE> implements GetterNode<
             setter.setValue(parent.getValue(object), value);
         }
 
+        @Override
+        public boolean hasSetter()
+        {
+            return true;
+        }
     }
 
-    public static final <ROOT, CURRENT, VALUE> PropertyNode<ROOT, CURRENT, VALUE> property(GetterNode<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Getter<CURRENT, VALUE> getter)
+    public static final <ROOT, CURRENT, VALUE> PropertyNode<ROOT, CURRENT, VALUE> property(MetaClassTemplate<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Getter<CURRENT, VALUE> getter)
     {
         return new PropertyNode<ROOT, CURRENT, VALUE>(parent, type, name, getter);
     }
 
-    public static final <ROOT, CURRENT, VALUE> PropertySetterNode<ROOT, CURRENT, VALUE> property(GetterNode<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Getter<CURRENT, VALUE> getter, Setter<CURRENT, VALUE> setter)
+    public static final <ROOT, CURRENT, VALUE> PropertySetterNode<ROOT, CURRENT, VALUE> property(MetaClassTemplate<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Getter<CURRENT, VALUE> getter, Setter<CURRENT, VALUE> setter)
     {
         return new PropertySetterNode<ROOT, CURRENT, VALUE>(parent, type, name, getter, setter);
     }

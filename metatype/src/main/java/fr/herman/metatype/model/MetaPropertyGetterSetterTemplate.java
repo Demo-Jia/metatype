@@ -13,16 +13,17 @@ public class MetaPropertyGetterSetterTemplate<ROOT, CURRENT, VALUE> implements M
     private final Getter<CURRENT, VALUE>      getter;
     private final Setter<CURRENT, VALUE>      setter;
 
-    public MetaPropertyGetterSetterTemplate(MetaClass<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Getter<CURRENT, VALUE> getter, Setter<CURRENT, VALUE> setter)
+    public MetaPropertyGetterSetterTemplate(MetaClassTemplate<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, Getter<CURRENT, VALUE> getter, Setter<CURRENT, VALUE> setter)
     {
         this.parent = parent;
         this.type = type;
         this.name = name;
         this.getter = getter;
         this.setter = setter;
+        parent.addProperty(this);
     }
 
-    public <GS extends Getter<CURRENT, VALUE> & Setter<CURRENT, VALUE>> MetaPropertyGetterSetterTemplate(MetaClass<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, GS getterSetter)
+    public <GS extends Getter<CURRENT, VALUE> & Setter<CURRENT, VALUE>> MetaPropertyGetterSetterTemplate(MetaClassTemplate<ROOT, ?, CURRENT> parent, Class<VALUE> type, String name, GS getterSetter)
     {
         this(parent, type, name, getterSetter, getterSetter);
     }
@@ -73,6 +74,18 @@ public class MetaPropertyGetterSetterTemplate<ROOT, CURRENT, VALUE> implements M
     public void setValue(ROOT object, VALUE value)
     {
         setter.setValue(parent.getValue(object), value);
+    }
+
+    @Override
+    public boolean hasGetter()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean hasSetter()
+    {
+        return true;
     }
 
 }
